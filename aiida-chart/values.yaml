@@ -1,8 +1,11 @@
+ghcrImagePullSecrets:
+  name: "ghcr-secret"
+
 timescaledb:
   replicaCount: 0
   database: "aiida"
-  encryptedPassword: ""
   encryptedUsername: ""
+  encryptedPassword: ""
   version: "latest-pg12"
   port: 5432
   storageSize: "1Gi"

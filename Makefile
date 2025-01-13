@@ -1,56 +1,50 @@
-RELEASE_NAME?=eddie
+RELEASE_NAME?=aiida
 NAMESPACE?=hardening
 
 template:
-	helm template ./eddie-chart \
-	--values ./eddie-chart/values.yaml \
-	--values ./eddie-chart/values-$(NAMESPACE).yaml \
+	helm template ./aiida-chart \
+	--values ./aiida-chart/values.yaml \
+	--values ./aiida-chart/values-$(NAMESPACE).yaml \
 	--debug --output-dir ./out
 
 template-plain-chart:
-	helm template ./eddie-chart \
-	--values ./eddie-chart/values.yaml \
+	helm template ./aiida-chart \
+	--values ./aiida-chart/values.yaml \
 	--debug --output-dir ./out
 
 install:
 	helm install $(RELEASE_NAME) -n $(NAMESPACE) \
-	--values ./eddie-chart/values.yaml \
-	--values ./eddie-chart/values-$(NAMESPACE).yaml \
-	--set kafka.replicaCount=0 \
+	--values ./aiida-chart/values.yaml \
+	--values ./aiida-chart/values-$(NAMESPACE).yaml \
 	--set core.replicaCount=0 \
-	--set exampleApp.replicaCount=0 \
-	--set emqx.replicaCount=0 \
-	--set postgres.replicaCount=0 \
-	./eddie-chart
+	--set keycloak.replicaCount=0 \
+	--set nanomq.replicaCount=0 \
+	--set timescaledb.replicaCount=1 \
+	--set teleinfo2mqtt.replicaCount=0 \
+	./aiida-chart
 
 remove:
 	helm uninstall -n $(NAMESPACE) $(RELEASE_NAME)
 
 standby:
 	helm upgrade -n $(NAMESPACE) $(RELEASE_NAME) \
-	--values ./eddie-chart/values.yaml \
-	--values ./eddie-chart/values-$(NAMESPACE).yaml \
-	--set kafka.replicaCount=0 \
+	--values ./aiida-chart/values.yaml \
+	--values ./aiida-chart/values-$(NAMESPACE).yaml \
 	--set core.replicaCount=0 \
-	--set exampleApp.replicaCount=0 \
-	--set emqx.replicaCount=0 \
-	--set postgres.replicaCount=0 \
-	./eddie-chart
+	--set keycloak.replicaCount=0 \
+	--set nanomq.replicaCount=0 \
+	--set timescaledb.replicaCount=0 \
+	--set teleinfo2mqtt.replicaCount=0 \
+	./aiida-chart
 
 upgrade:
 	helm upgrade -n $(NAMESPACE) $(RELEASE_NAME) \
-	--values ./eddie-chart/values.yaml \
-	--values ./eddie-chart/values-$(NAMESPACE).yaml \
-	./eddie-chart
+	--values ./aiida-chart/values.yaml \
+	--values ./aiida-chart/values-$(NAMESPACE).yaml \
+	./aiida-chart
 
-cluster-init:
-	k3s create cluster --name aiida-cluster
-
-cluster-remove:
-	k4s delete cluster --name aiida-cluster
-
-postgres-forward:
-	kubectl port-forward -n $(NAMESPACE) svc/$(RELEASE_NAME)-postgres 15432:5432
+timescaledb-forward:
+	kubectl port-forward -n $(NAMESPACE) svc/$(RELEASE_NAME)-timescaledb 15432:5432
 
 aiida-public-forward:
 	kubectl port-forward -n $(NAMESPACE) svc/$(RELEASE_NAME)-core 8333:8080
@@ -61,17 +55,11 @@ create-ghcr-secret:
 	  --docker-username=${CR_USERNAME} \
 	  --docker-password=${CR_PAT}
 
-create-ssl-stores-secret:
-	kubectl -n $(NAMESPACE) create secret generic kafka-ssl-stores \
-	--from-file=kafka.keystore.jks=$(KEYSTORE_LOCATION) \
-	--from-file=kafka.truststore.jks=$(TRUSTSTORE_LOCATION)
-
 seal-secret:
-	yq eval '.$(VALUE)' ./eddie-chart/values-$(NAMESPACE).yaml | tr -d '\n'| kubeseal \
+	yq eval '.$(VALUE)' ./aiida-chart/values-$(NAMESPACE).yaml | tr -d '\n'| kubeseal \
 			--controller-namespace $(NAMESPACE) \
-			--controller-name sealed-secrets-controller-$(NAMESPACE) \
 			--raw \
 			--namespace $(NAMESPACE) \
 			--name $(RELEASE_NAME)-$(SECRET_NAME) | \
 			xargs \-I{} yq eval -i '.$(VALUE) = "{}"' \
-			./eddie-chart/values-$(NAMESPACE).yaml
+			./aiida-chart/values-$(NAMESPACE).yaml

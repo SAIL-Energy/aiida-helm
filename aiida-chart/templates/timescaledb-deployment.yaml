@@ -4,7 +4,7 @@ metadata:
   name: {{ .Release.Name }}-timescaledb
   {{- include "aiida.timescaledb.labels" . | indent 2 }}
 spec:
-  replicas: {{ .Values.timescaledb.replicas }}
+  replicas: {{ .Values.timescaledb.replicaCount }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}-timescaledb
@@ -21,12 +21,19 @@ spec:
         - name: POSTGRES_DB
           value: {{ .Values.timescaledb.database }}
         - name: POSTGRES_USER
-          value: {{ .Values.timescaledb.postgresUser }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-timescaledb-secret
+              key: username
         - name: POSTGRES_PASSWORD
-          value: {{ .Values.timescaledb.postgresPassword }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-timescaledb-secret
+              key: password
         volumeMounts:
-        - mountPath: /var/lib/postgresql/data
-          name: timescaledb-data
+        - name: timescaledb-data
+          mountPath: /var/lib/postgresql/data
+
       volumes:
       - name: timescaledb-data
         persistentVolumeClaim:
