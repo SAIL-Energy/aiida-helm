@@ -1,6 +1,13 @@
 ghcrImagePullSecrets:
   name: "ghcr-secret"
 
+ingress:
+  basePath: ""
+  host: "localhost"
+  tls:
+    enabled: "false"
+    clusterIssuer: ""
+
 timescaledb:
   replicaCount: 0
   database: "aiida"
@@ -10,5 +17,9 @@ timescaledb:
   port: 5432
   storageSize: "1Gi"
 
-volumes:
-  db_data: {}
+nanomq:
+  replicaCount: 0
+  version: "latest"
+  port: 1883
+  sslPort: 8883
+  wsPort: 8083

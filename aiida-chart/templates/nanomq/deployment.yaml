@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-nanomq
+  {{- include "aiida.nanomq.labels" . | indent 2 }}
+spec:
+  replicas: {{ .Values.nanomq.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-nanomq
+  template:
+    metadata:
+    {{- include "aiida.nanomq.labels" . | indent 6 }}
+    spec:
+      containers:
+        - name: postgres
+          image: "emqx/nanomq:{{ .Values.nanomq.version }}"
+          ports:
+            - name: mqtt
+              containerPort: {{ .Values.nanomq.port }}
+            - name: mqttssl
+              containerPort: {{ .Values.nanomq.sslPort }}
+            - name: mqttws
+              containerPort: {{ .Values.nanomq.wsPort }}
+          volumeMounts:
+            - name: nanomq-config
+              mountPath: /etc/nanomq.conf
+      volumes:
+        - name: nanomq-config
+          configMap:
+            name: {{ .Release.Name }}-nanomq-config
+            items:
+              - key: nanomq.conf
+                path: nanomq.conf
