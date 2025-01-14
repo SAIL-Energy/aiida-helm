@@ -17,13 +17,20 @@ spec:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
-          - path: /auth
+          - path: /
             pathType: Prefix
             backend:
               service:
                 name: {{ .Release.Name }}-keycloak
                 port:
                   number: {{ .Values.keycloak.port }}
+          - path: {{ .Values.core.path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-core
+                port:
+                  number: {{ .Values.core.port }}
 {{- if eq .Values.ingress.tls.enabled "true" }}
   tls:
     - hosts:

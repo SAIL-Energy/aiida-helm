@@ -7,6 +7,13 @@ ingress:
     enabled: "false"
     clusterIssuer: ""
 
+core:
+  replicaCount: 1
+  version: "latest"
+  port: 8080
+  path: "/aiida"
+  streamerPollInterval: "30"
+
 timescaledb:
   replicaCount: 1
   version: "latest-pg12"
@@ -41,8 +48,6 @@ keycloak:
   replicaCount: 1
   version: "latest"
   port: 8080
-  internalHost: "http://localhost:8080"
-  externalHost: "http://localhost/auth"
   encryptedAdminUsername: ""
   encryptedAdminPassword: ""
 

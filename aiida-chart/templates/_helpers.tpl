@@ -6,6 +6,13 @@
   version: {{ .Chart.Version }}
 {{- end }}
 
+{{/* Metadata for core components */}}
+{{- define "aiida.core.labels" }}
+labels:
+  app: {{ .Release.Name }}-core
+{{- include "aiida.labels" . }}
+{{- end }}
+
 {{/* Metadata for timescaledb components */}}
 {{- define "aiida.timescaledb.labels" }}
 labels:
@@ -32,4 +39,19 @@ labels:
 labels:
   app: {{ .Release.Name }}-keycloak
 {{- include "aiida.labels" . }}
+{{- end }}
+
+{{/* Helper to build the postgres Url */}}
+{{- define "aiida.timescaledb.jdbc-url" -}}
+"jdbc:postgresql://{{ .Release.Name }}-timescaledb:{{ .Values.timescaledb.port }}/{{ .Values.timescaledb.database }}"
+{{- end }}
+
+{{/* Helper to build the external core host */}}
+{{- define "aiida.core.external-host" -}}
+"{{ .Values.ingress.host }}{{ .Values.core.path }}"
+{{- end }}
+
+{{/* Helper to build the internal keycloak host */}}
+{{- define "aiida.keycloak.internal-host" -}}
+"{{ .Release.Name }}-keycloak:{{ .Values.keycloak.port }}"
 {{- end }}

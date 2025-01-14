@@ -15,16 +15,17 @@ spec:
       containers:
         - name: keycloak
           image: "quay.io/keycloak/keycloak:{{ .Values.keycloak.version }}"
-          args:
-            - -v
-            - start-dev
-            - --import-realm
+          args: ["-v", "start-dev", "--import-realm"]
           ports:
             - name: keycloak
               containerPort: {{ .Values.keycloak.port }}
           env:
             - name: KC_HOSTNAME
-              value: "{{ .Values.keycloak.externalHost }}"
+              value: "{{ .Values.ingress.host }}"
+            - name: KC_PROXY
+              value: "edge"
+            - name: KC_HEALTH_ENABLED
+              value: "true"
             - name: KEYCLOAK_ADMIN
               valueFrom:
                 secretKeyRef:
