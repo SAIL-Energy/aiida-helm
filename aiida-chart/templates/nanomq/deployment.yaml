@@ -13,7 +13,7 @@ spec:
     {{- include "aiida.nanomq.labels" . | indent 6 }}
     spec:
       containers:
-        - name: postgres
+        - name: nanomq
           image: "emqx/nanomq:{{ .Values.nanomq.version }}"
           ports:
             - name: mqtt
@@ -25,10 +25,15 @@ spec:
           volumeMounts:
             - name: nanomq-config
               mountPath: /etc/nanomq.conf
+              subPath: nanomq.conf
+            - name: nanomq-secret
+              mountPath: /etc/nanomq_pwd.conf
+              subPath: pwd
+
       volumes:
         - name: nanomq-config
           configMap:
             name: {{ .Release.Name }}-nanomq-config
-            items:
-              - key: nanomq.conf
-                path: nanomq.conf
+        - name: nanomq-secret
+          secret:
+            secretName: {{ .Release.Name }}-nanomq-secret

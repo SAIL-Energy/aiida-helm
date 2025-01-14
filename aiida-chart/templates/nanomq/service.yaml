@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-nanomq
+  {{- include "aiida.nanomq.labels" . | indent 2 }}
+spec:
+  selector:
+    app: {{ .Release.Name }}-nanomq
+  ports:
+    - name: mqtt
+      port: {{ .Values.nanomq.port }}
+      protocol: TCP
+      targetPort: mqtt
+    - name: mqttssl
+      port: {{ .Values.nanomq.sslPort }}
+      protocol: TCP
+      targetPort: mqttssl
+    - name: mqttws
+      port: {{ .Values.nanomq.wsPort }}
+      protocol: TCP
+      targetPort: mqttws

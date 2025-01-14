@@ -17,5 +17,5 @@ labels:
 {{- define "aiida.nanomq.labels" }}
 labels:
   app: {{ .Release.Name }}-nanomq
-{{- include "aiida.nanomq" . }}
+{{- include "aiida.labels" . }}
 {{- end }}

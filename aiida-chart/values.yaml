@@ -9,17 +9,18 @@ ingress:
     clusterIssuer: ""
 
 timescaledb:
-  replicaCount: 0
+  replicaCount: 1
+  version: "latest-pg12"
   database: "aiida"
   encryptedUsername: ""
   encryptedPassword: ""
-  version: "latest-pg12"
   port: 5432
   storageSize: "1Gi"
 
 nanomq:
-  replicaCount: 0
+  replicaCount: 1
   version: "latest"
+  encryptedPwd: ""
   port: 1883
   sslPort: 8883
   wsPort: 8083

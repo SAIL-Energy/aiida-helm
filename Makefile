@@ -16,11 +16,6 @@ install:
 	helm install $(RELEASE_NAME) -n $(NAMESPACE) \
 	--values ./aiida-chart/values.yaml \
 	--values ./aiida-chart/values-$(NAMESPACE).yaml \
-	--set core.replicaCount=0 \
-	--set keycloak.replicaCount=0 \
-	--set nanomq.replicaCount=0 \
-	--set timescaledb.replicaCount=1 \
-	--set teleinfo2mqtt.replicaCount=0 \
 	./aiida-chart
 
 remove:
