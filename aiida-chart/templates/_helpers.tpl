@@ -19,3 +19,10 @@ labels:
   app: {{ .Release.Name }}-nanomq
 {{- include "aiida.labels" . }}
 {{- end }}
+
+{{/* Metadata for teleinfo2mqtt components */}}
+{{- define "aiida.teleinfo2mqtt.labels" }}
+labels:
+  app: {{ .Release.Name }}-teleinfo2mqtt
+{{- include "aiida.labels" . }}
+{{- end }}
