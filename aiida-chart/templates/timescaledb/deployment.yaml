@@ -13,28 +13,29 @@ spec:
     {{- include "aiida.timescaledb.labels" . | indent 6 }}
     spec:
       containers:
-      - name: timescaledb
-        image: "timescale/timescaledb:{{ .Values.timescaledb.version }}"
-        ports:
-        - containerPort: {{ .Values.timescaledb.port }}
-        env:
-        - name: POSTGRES_DB
-          value: {{ .Values.timescaledb.database }}
-        - name: POSTGRES_USER
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Release.Name }}-timescaledb-secret
-              key: username
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Release.Name }}-timescaledb-secret
-              key: password
-        volumeMounts:
-        - name: timescaledb-data
-          mountPath: /var/lib/postgresql/data
+        - name: timescaledb
+          image: "timescale/timescaledb:{{ .Values.timescaledb.version }}"
+          ports:
+            - name: timescaledb
+              containerPort: {{ .Values.timescaledb.port }}
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.timescaledb.database }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-timescaledb-secret
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-timescaledb-secret
+                  key: password
+          volumeMounts:
+            - name: timescaledb-data
+              mountPath: /var/lib/postgresql/data
 
       volumes:
-      - name: timescaledb-data
-        persistentVolumeClaim:
-          claimName: {{ .Release.Name }}-timescaledb-pvc
+        - name: timescaledb-data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-timescaledb-pvc

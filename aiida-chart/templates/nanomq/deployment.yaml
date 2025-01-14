@@ -16,12 +16,15 @@ spec:
         - name: nanomq
           image: "emqx/nanomq:{{ .Values.nanomq.version }}"
           ports:
-            - name: mqtt
-              containerPort: {{ .Values.nanomq.port }}
+            - name: mqttstd
+              containerPort: {{ .Values.nanomq.stdPort }}
+              protocol: TCP
             - name: mqttssl
               containerPort: {{ .Values.nanomq.sslPort }}
+              protocol: TCP
             - name: mqttws
               containerPort: {{ .Values.nanomq.wsPort }}
+              protocol: TCP
           volumeMounts:
             - name: nanomq-config
               mountPath: /etc/nanomq.conf

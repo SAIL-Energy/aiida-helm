@@ -26,3 +26,10 @@ labels:
   app: {{ .Release.Name }}-teleinfo2mqtt
 {{- include "aiida.labels" . }}
 {{- end }}
+
+{{/* Metadata for keycloak components */}}
+{{- define "aiida.keycloak.labels" }}
+labels:
+  app: {{ .Release.Name }}-keycloak
+{{- include "aiida.labels" . }}
+{{- end }}

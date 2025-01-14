@@ -23,14 +23,14 @@ spec:
               value: "mqtt://{{ .Release.Name }}-nanomq:{{ .Values.nanomq.port }}"
             - name: MQTT_USERNAME
               valueFrom:
-                  secretKeyRef:
-                    name: {{ .Release.Name }}-teleinfo2mqtt-secret
-                    key: mqttUsername
+                secretKeyRef:
+                  name: {{ .Release.Name }}-teleinfo2mqtt-secret
+                  key: mqttUsername
             - name: MQTT_PASSWORD
               valueFrom:
-                  secretKeyRef:
-                      name: {{ .Release.Name }}-teleinfo2mqtt-secret
-                      key: mqttPassword
+                secretKeyRef:
+                  name: {{ .Release.Name }}-teleinfo2mqtt-secret
+                  key: mqttPassword
             - name: EMIT_INTERVAL
               value: "{{ .Values.teleinfo2mqtt.emitInterval }}"
             - name: HASS_DISCOVERY

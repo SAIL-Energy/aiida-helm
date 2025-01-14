@@ -7,4 +7,6 @@ spec:
   selector:
     app: {{ .Release.Name }}-timescaledb
   ports:
-    - port: {{ .Values.timescaledb.port }}
+    - name: timescaledb
+      port: {{ .Values.timescaledb.port }}
+      targetPort: timescaledb

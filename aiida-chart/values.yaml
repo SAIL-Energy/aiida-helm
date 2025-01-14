@@ -2,7 +2,6 @@ ghcrImagePullSecrets:
   name: "ghcr-secret"
 
 ingress:
-  basePath: ""
   host: "localhost"
   tls:
     enabled: "false"
@@ -21,7 +20,7 @@ nanomq:
   replicaCount: 1
   version: "latest"
   encryptedPwd: ""
-  port: 1883
+  stdPort: 1883
   sslPort: 8883
   wsPort: 8083
 
@@ -37,3 +36,13 @@ teleinfo2mqtt:
   hassDiscovery: "false"
   ticMode: "history"
   timezone: "Europe/Paris"
+
+keycloak:
+  replicaCount: 1
+  version: "latest"
+  port: 8080
+  internalHost: "http://localhost:8080"
+  externalHost: "http://localhost/auth"
+  encryptedAdminUsername: ""
+  encryptedAdminPassword: ""
+

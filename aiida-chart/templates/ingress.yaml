@@ -17,13 +17,13 @@ spec:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
-          - path: {{ if .Values.ingress.basePath }}/{{ .Values.ingress.basePath }}{{ end }}/aiida
+          - path: /auth
             pathType: Prefix
             backend:
               service:
-                name: {{ .Release.Name }}-core
+                name: {{ .Release.Name }}-keycloak
                 port:
-                  number: 8001
+                  number: {{ .Values.keycloak.port }}
 {{- if eq .Values.ingress.tls.enabled "true" }}
   tls:
     - hosts:
