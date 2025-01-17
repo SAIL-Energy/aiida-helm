@@ -41,6 +41,11 @@ labels:
 {{- include "aiida.labels" . }}
 {{- end }}
 
+{{/* Helper for http protocol */}}
+{{- define "aiida.ingress.protocol" }}
+{{- if .Values.ingress.tls.enabled }} https {{- else }} http {{- end }}
+{{- end }}
+
 {{/* Helper to build the postgres Url */}}
 {{- define "aiida.timescaledb.jdbc-url" -}}
 "jdbc:postgresql://{{ .Release.Name }}-timescaledb:{{ .Values.timescaledb.port }}/{{ .Values.timescaledb.database }}"
@@ -48,10 +53,15 @@ labels:
 
 {{/* Helper to build the external core host */}}
 {{- define "aiida.core.external-host" -}}
-"{{ .Values.ingress.host }}{{ .Values.core.path }}"
+"{{ include "aiida.ingress.protocol" . }}://{{ .Values.ingress.host }}{{ .Values.core.path }}"
+{{- end }}
+
+{{/* Helper to build the internal keycloak host */}}
+{{- define "aiida.keycloak.external-host" -}}
+"{{ include "aiida.ingress.protocol" . }}://{{ .Values.ingress.host }}"
 {{- end }}
 
 {{/* Helper to build the internal keycloak host */}}
 {{- define "aiida.keycloak.internal-host" -}}
-"{{ .Release.Name }}-keycloak:{{ .Values.keycloak.port }}"
+"http://{{ .Release.Name }}-keycloak:{{ .Values.keycloak.port }}"
 {{- end }}

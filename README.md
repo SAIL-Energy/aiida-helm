@@ -2,6 +2,10 @@
 
 This is the repository, that holds a helm chart for the deployment of AIIDA using Kubernetes.
 
+## TODOs
+
+- [ ] Readiness Probes
+
 ## Tools
 
 Overview of the tools used in this repository:

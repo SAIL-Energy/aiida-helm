@@ -36,7 +36,7 @@ spec:
             - name: AIIDA_EXTERNAL_HOST
               value: {{ include "aiida.core.external-host" . }}
             - name: KEYCLOAK_EXTERNAL_HOST
-              value: {{ .Values.ingress.host }}
+              value: {{ include "aiida.keycloak.external-host" . }}
             - name: KEYCLOAK_INTERNAL_HOST
               value: {{ include "aiida.keycloak.internal-host" . }}
 

@@ -23,14 +23,14 @@ spec:
               service:
                 name: {{ .Release.Name }}-keycloak
                 port:
-                  number: {{ .Values.keycloak.port }}
+                  name: keycloak
           - path: {{ .Values.core.path }}
             pathType: Prefix
             backend:
               service:
                 name: {{ .Release.Name }}-core
                 port:
-                  number: {{ .Values.core.port }}
+                  name: core
 {{- if eq .Values.ingress.tls.enabled "true" }}
   tls:
     - hosts:

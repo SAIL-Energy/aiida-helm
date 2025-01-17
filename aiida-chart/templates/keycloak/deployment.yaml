@@ -19,9 +19,11 @@ spec:
           ports:
             - name: keycloak
               containerPort: {{ .Values.keycloak.port }}
+            - name: management
+              containerPort: {{ .Values.keycloak.managementPort }}
           env:
             - name: KC_HOSTNAME
-              value: "{{ .Values.ingress.host }}"
+              value: {{ include "aiida.keycloak.external-host" . }}
             - name: KC_PROXY
               value: "edge"
             - name: KC_HEALTH_ENABLED
@@ -41,6 +43,10 @@ spec:
               mountPath: /opt/keycloak/data/import/
             - name: keycloak-theme-config
               mountPath: /opt/keycloak/themes/eddie-theme/
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: management
 
       volumes:
         - name: keycloak-realm-config

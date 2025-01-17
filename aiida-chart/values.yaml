@@ -48,6 +48,7 @@ keycloak:
   replicaCount: 1
   version: "latest"
   port: 8080
+  managementPort: 9000
   encryptedAdminUsername: ""
   encryptedAdminPassword: ""
 
