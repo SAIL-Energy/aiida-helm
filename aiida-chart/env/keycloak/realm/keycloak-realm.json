@@ -7,7 +7,7 @@
     {
       "clientId": "AIIDA",
       "enabled": true,
-      "redirectUris": ["http://localhost:*"],
+      "redirectUris": ["http://localhost*"],
       "publicClient": false,
       "secret": "REPLACE_ME",
       "directAccessGrantsEnabled": true

@@ -58,7 +58,7 @@ labels:
 
 {{/* Helper to build the internal keycloak host */}}
 {{- define "aiida.keycloak.external-host" -}}
-"{{ include "aiida.ingress.protocol" . }}://{{ .Values.ingress.host }}"
+"{{ include "aiida.ingress.protocol" . }}://{{ .Values.ingress.host }}{{ .Values.keycloak.path }}"
 {{- end }}
 
 {{/* Helper to build the internal keycloak host */}}
