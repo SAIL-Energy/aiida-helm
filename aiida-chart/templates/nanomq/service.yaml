@@ -7,12 +7,12 @@ spec:
   selector:
     app: {{ .Release.Name }}-nanomq
   ports:
-    - name: mqttstd
+    - name: mqtt-std
       port: {{ .Values.nanomq.stdPort }}
-      targetPort: mqttstd
-    - name: mqttssl
+      targetPort: mqtt-std
+    - name: mqtt-ssl
       port: {{ .Values.nanomq.sslPort }}
-      targetPort: mqttssl
-    - name: mqttws
+      targetPort: mqtt-ssl
+    - name: mqtt-ws
       port: {{ .Values.nanomq.wsPort }}
-      targetPort: mqttws
+      targetPort: mqtt-ws

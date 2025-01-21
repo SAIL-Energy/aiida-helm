@@ -16,15 +16,18 @@ spec:
         - name: nanomq
           image: "emqx/nanomq:{{ .Values.nanomq.version }}"
           ports:
-            - name: mqttstd
+            - name: mqtt-std
               containerPort: {{ .Values.nanomq.stdPort }}
               protocol: TCP
-            - name: mqttssl
+            - name: mqtt-ssl
               containerPort: {{ .Values.nanomq.sslPort }}
               protocol: TCP
-            - name: mqttws
+            - name: mqtt-ws
               containerPort: {{ .Values.nanomq.wsPort }}
               protocol: TCP
+          env:
+            - name: NANOMQ_HTTP_SERVER_ENABLED
+              value: "true"
           volumeMounts:
             - name: nanomq-config
               mountPath: /etc/nanomq.conf
@@ -32,6 +35,9 @@ spec:
             - name: nanomq-secret
               mountPath: /etc/nanomq_pwd.conf
               subPath: pwd
+          readinessProbe:
+            tcpSocket:
+              port: mqtt-std
 
       volumes:
         - name: nanomq-config

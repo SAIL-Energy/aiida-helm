@@ -41,6 +41,15 @@ spec:
               value: {{ include "aiida.keycloak.external-host" . }}
             - name: KEYCLOAK_INTERNAL_HOST
               value: {{ include "aiida.keycloak.internal-host" . }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.core.path }}/actuator/health/readiness
+              port: core
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.core.path }}/actuator/health/liveness
+              port: core
+
 
       imagePullSecrets:
         - name: {{ .Values.ghcrImagePullSecrets.name }}
