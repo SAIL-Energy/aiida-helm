@@ -19,6 +19,8 @@ spec:
             - containerPort: {{ .Values.core.port }}
               name: core
           env:
+            - name: SERVER_SERVLET_CONTEXT_PATH
+              value: {{ .Values.core.path }}
             - name: SPRING_DATASOURCE_URL
               value: {{ include "aiida.timescaledb.jdbc-url" . }}
             - name: SPRING_DATASOURCE_USERNAME

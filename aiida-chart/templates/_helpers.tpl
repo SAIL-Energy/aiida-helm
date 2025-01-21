@@ -43,7 +43,7 @@ labels:
 
 {{/* Helper for http protocol */}}
 {{- define "aiida.ingress.protocol" }}
-{{- if .Values.ingress.tls.enabled }} https {{- else }} http {{- end }}
+{{- if eq .Values.ingress.tls.enabled "true" }}https{{- else }}http{{- end }}
 {{- end }}
 
 {{/* Helper to build the postgres Url */}}
@@ -63,5 +63,5 @@ labels:
 
 {{/* Helper to build the internal keycloak host */}}
 {{- define "aiida.keycloak.internal-host" -}}
-"http://{{ .Release.Name }}-keycloak:{{ .Values.keycloak.port }}"
+"http://{{ .Release.Name }}-keycloak:{{ .Values.keycloak.port }}{{ .Values.keycloak.path }}"
 {{- end }}

@@ -23,7 +23,7 @@ spec:
               containerPort: {{ .Values.keycloak.managementPort }}
           env:
             - name: KC_HOSTNAME
-              value: {{ .Values.ingress.host }}
+              value: {{ include "aiida.keycloak.external-host" . }}
             - name: KC_HTTP_RELATIVE_PATH
               value: {{ .Values.keycloak.path }}
             - name: KC_PROXY
