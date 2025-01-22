@@ -3,9 +3,7 @@ ghcrImagePullSecrets:
 
 ingress:
   host: "localhost"
-  tls:
-    enabled: "false"
-    clusterIssuer: ""
+  tlsEnabled: "false"
 
 core:
   replicaCount: 1

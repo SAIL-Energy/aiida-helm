@@ -43,7 +43,7 @@ labels:
 
 {{/* Helper for http protocol */}}
 {{- define "aiida.ingress.protocol" }}
-{{- if eq .Values.ingress.tls.enabled "true" }}https{{- else }}http{{- end }}
+{{- if eq .Values.ingress.tlsEnabled "true" }}https{{- else }}http{{- end }}
 {{- end }}
 
 {{/* Helper to build the postgres Url */}}
