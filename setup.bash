@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 NAMESPACE_ARG="--namespace"
-NAMESPACE="hardening"
+NAMESPACE=${NAMESPACE:-"hardening"}
 GHCR_USERNAME_ARG="--ghcr-username"
 GHCR_USERNAME=""
 GHCR_PAT_ARG="--ghcr-pat"
@@ -46,14 +46,19 @@ if [ -z "$GHCR_USERNAME" ] || [ -z "$GHCR_PAT" ]; then
 fi
 
 curl -sfL https://get.k3s.io | sh -
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-chmod 644 /etc/rancher/k3s/k3s.yaml
+mkdir -p ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+chmod 600 ~/.kube/config
 
-sudo pacman -S kubectl
-sudo pacman -S helm
-sudo pacman -S k9s
-sudo snap install yq
-sudo pacman -S kubeseal
+export KUBECONFIG=~/.kube/config
+
+sudo pacman -S kubectl --noconfirm
+sudo pacman -S helm --noconfirm
+sudo pacman -S k9s --noconfirm
+sudo pacman -S go-yq --noconfirm
+sudo pacman -S kubeseal --noconfirm
+
+kubectl create namespace "$NAMESPACE"
 
 helm repo add sealed-secrets https://bitnami-labs.github.io/sealed-secrets
 
@@ -70,7 +75,7 @@ helm install cert-manager \
   --set crds.enabled=true \
   jetstack/cert-manager
 
-make create-ghcr-secret
+make create-ghcr-secret GHCR_USERNAME="$GHCR_USERNAME" GHCR_PAT="$GHCR_PAT"
 
 make seal-secret VALUE="timescaledb.encryptedUsername" SECRET_NAME="timescaledb-secret"
 make seal-secret VALUE="timescaledb.encryptedPassword" SECRET_NAME="timescaledb-secret"
