@@ -26,7 +26,7 @@ Create initial values file:
 touch aiida-chart/values-$NAMESPACE.yaml
 ```
 
-The `setup.bash` script is designed to set up all the necessary tools for Arch. Before running the script, you need to create a personal access token in GitHub with the `read:packages` scope. The username should be your GitHub username.
+The `setup-arch.bash` script is designed to set up all the necessary tools for Arch. Before running the script, you need to create a personal access token in GitHub with the `read:packages` scope. The username should be your GitHub username.
 
 The script performs the following tasks:
 
@@ -37,7 +37,7 @@ To customize the configuration, copy the `.values-template.yaml` file and edit t
 
 To execute the script, replace YOUR_USERNAME and YOUR_PERSONAL_ACCESS_TOKEN with your GitHub username and personal access token, then run the following command:
 ```bash
-./setup.bash --ghcr-username="YOUR_USERNAME" --ghcr-pat="YOUR_PERSONAL_ACCESS_TOKEN"
+./setup-arch.bash --ghcr-username="YOUR_USERNAME" --ghcr-pat="YOUR_PERSONAL_ACCESS_TOKEN"
 ```
 
 If you are planning to install multiple aiida instances on the same cluster, add this to your `values.yaml`:
