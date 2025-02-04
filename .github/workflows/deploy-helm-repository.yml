@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,8 +19,5 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: aiida-repository
+          publish_dir: ./aiida-repository
           keep_files: false
-
-      - name: Post deployment message
-        run: echo "Helm repository deployed to GitHub Pages!"
