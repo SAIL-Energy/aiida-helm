@@ -12,6 +12,14 @@ template-plain-chart:
 	--values ./aiida-chart/values.yaml \
 	--debug --output-dir ./out
 
+package:
+	helm package ./aiida-chart \
+	--destination ./aiida-repository/$(NAMESPACE)/packages
+
+index:
+	helm repo index ./aiida-repository/$(NAMESPACE) \
+	--url "https://aiida.github.io/helm-charts/$(NAMESPACE)"
+
 install:
 	helm install $(RELEASE_NAME) -n $(NAMESPACE) \
 	--values ./aiida-chart/values.yaml \
