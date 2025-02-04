@@ -1,0 +1,26 @@
+name: Deploy Helm Repository to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: aiida-repository
+          keep_files: false
+
+      - name: Post deployment message
+        run: echo "Helm repository deployed to GitHub Pages!"
