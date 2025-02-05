@@ -18,7 +18,7 @@ package:
 
 index:
 	helm repo index ./aiida-repository/$(NAMESPACE) \
-	--url "https://eddie-energy.github.io/helm-charts/$(NAMESPACE)"
+	--url "https://eddie-energy.github.io/aiida-helm/$(NAMESPACE)"
 
 install:
 	helm install $(RELEASE_NAME) -n $(NAMESPACE) \
