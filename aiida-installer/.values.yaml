@@ -1,0 +1,11 @@
+timescaledb:
+  encryptedUsername: "admin"
+  encryptedPassword: "megasafe"
+nanomq:
+  encryptedPwd: "admin"
+teleinfo2mqtt:
+  encryptedMqttUsername: "admin"
+  encryptedMqttPassword: "supersafe"
+keycloak:
+  encryptedAdminUsername: "admin"
+  encryptedAdminPassword: "admin"

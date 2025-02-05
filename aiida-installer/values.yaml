@@ -1,0 +1,13 @@
+ghcrImagePullSecrets:
+  name: ghcr-secret
+timescaledb:
+  encryptedUsername: ""
+  encryptedPassword: ""
+nanomq:
+  encryptedPwd: ""
+teleinfo2mqtt:
+  encryptedMqttUsername: ""
+  encryptedMqttPassword: ""
+keycloak:
+  encryptedAdminUsername: ""
+  encryptedAdminPassword: ""

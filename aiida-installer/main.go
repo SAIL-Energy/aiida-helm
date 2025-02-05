@@ -4,15 +4,18 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
-	"time"
-
 	helmclient "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/repo"
+	"log"
+	"time"
 )
 
 func main() {
+	install()
+}
+
+func install() {
 	var outputBuffer bytes.Buffer
 
 	opt := &helmclient.Options{
@@ -49,25 +52,24 @@ func main() {
 	}
 
 	chartSpec := helmclient.ChartSpec{
-		ReleaseName:     "aiida-chart",
+		ReleaseName:     "aiida",
 		ChartName:       "aiida-repo/aiida-chart",
 		Namespace:       "hardening",
 		CreateNamespace: true,
 		ValuesOptions: values.Options{
 			StringValues: []string{
-				"controller.status.processors=20",
-				"controller.operation.processors=10",
-				"controller.self.heal.timeout.seconds=5",
-				"controller.repo.server.timeout.seconds=60",
+				"ingress.host=localhost",
 			},
-			Values: []string{"./values-dev.yaml"},
+			ValueFiles: []string{
+				"values.yaml",
+			},
 		},
 		SkipCRDs: true,
 		Wait:     true,
 	}
 	ctx := context.Background()
-	mycontext, _ := context.WithTimeout(ctx, 80000*time.Second)
-	myInstalledHelmChart, err := myHelmClient.InstallChart(mycontext, &chartSpec, nil)
+	myContext, _ := context.WithTimeout(ctx, 80000*time.Second)
+	myInstalledHelmChart, err := myHelmClient.InstallChart(myContext, &chartSpec, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
