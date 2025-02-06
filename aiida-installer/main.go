@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"github.com/eddie-energy/aiida-helm/aiida-installer/internal/secrets"
 	helmclient "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/repo"
@@ -11,67 +11,93 @@ import (
 	"time"
 )
 
-func main() {
-	install()
-}
+const RepositoryUrl = "https://eddie-energy.github.io/aiida-helm/hardening"
+const RepositoryName = "aiida-repository"
+const RepositoryCache = "/tmp/.helmcache"
+const RepositoryConfig = "/tmp/.helmrepo"
 
-func install() {
+const ReleaseName = "aiida"
+const ChartName = "aiida-chart"
+const Namespace = "hardening"
+
+const SealedSecretsController = "sealed-secrets-controller"
+
+const SecretsPath = "configs/secrets-template.yaml"
+const SealedSecretsPath = "configs/secrets.yaml"
+
+func install(namespace string) error {
 	var outputBuffer bytes.Buffer
 
 	opt := &helmclient.Options{
-		Namespace:        "hardening",
-		RepositoryCache:  "/tmp/.helmcache",
-		RepositoryConfig: "/tmp/.helmrepo",
-		Debug:            false,
+		Namespace:        namespace,
+		RepositoryCache:  RepositoryCache,
+		RepositoryConfig: RepositoryConfig,
+		Debug:            true,
 		Linting:          true,
-		DebugLog:         func(format string, v ...interface{}) {},
+		DebugLog:         func(format string, v ...interface{}) { log.Printf(format+"\n", v...) },
 		Output:           &outputBuffer,
 	}
 
 	myHelmClient, err := helmclient.New(opt)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	chartRepo := repo.Entry{
-		Name:               "aiida-repo",
-		URL:                "https://eddie-energy.github.io/aiida-helm/hardening",
+	repository := repo.Entry{
+		Name:               RepositoryName,
+		URL:                RepositoryUrl,
 		PassCredentialsAll: true,
 	}
 
-	if err := myHelmClient.AddOrUpdateChartRepo(chartRepo); err != nil {
-		log.Fatal(err)
-	} else {
-		fmt.Printf("Added Chart Repo %s\n", chartRepo.Name)
+	if err := myHelmClient.AddOrUpdateChartRepo(repository); err != nil {
+		return err
 	}
 
 	if err := myHelmClient.UpdateChartRepos(); err != nil {
-		log.Fatal(err)
-	} else {
-		fmt.Printf("Updating Chart Repo\n")
+		return err
 	}
 
 	chartSpec := helmclient.ChartSpec{
-		ReleaseName:     "aiida",
-		ChartName:       "aiida-repo/aiida-chart",
-		Namespace:       "hardening",
+		ReleaseName:     ReleaseName,
+		ChartName:       RepositoryName + "/" + ChartName,
+		Namespace:       namespace,
 		CreateNamespace: true,
-		ValuesOptions: values.Options{
-			StringValues: []string{
-				"ingress.host=localhost",
-			},
-			ValueFiles: []string{
-				"values.yaml",
-			},
-		},
-		SkipCRDs: true,
-		Wait:     true,
+		ValuesOptions:   values.Options{ValueFiles: []string{SealedSecretsPath}},
+		SkipCRDs:        true,
+		Wait:            true,
 	}
-	ctx := context.Background()
-	myContext, _ := context.WithTimeout(ctx, 80000*time.Second)
-	myInstalledHelmChart, err := myHelmClient.InstallChart(myContext, &chartSpec, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	defer cancel()
+
+	_ = myHelmClient.UninstallRelease(&chartSpec)
+
+	myInstalledHelmChart, err := myHelmClient.InstallChart(ctx, &chartSpec, nil)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	fmt.Printf("Status of Chart Install %v,\n", *myInstalledHelmChart.Info)
+
+	log.Printf("Status of Chart Install %v,\n", *myInstalledHelmChart.Info)
+
+	return nil
 }
+
+func main() {
+	err := secrets.EncryptSecrets(Namespace, SealedSecretsController, ReleaseName, SecretsPath, SealedSecretsPath)
+	if err != nil {
+		log.Fatalf("Error encrypting secrets: %v", err)
+	}
+
+	err = install(Namespace)
+	if err != nil {
+		log.Fatalf("Error installing chart: %v", err)
+	}
+}
+
+/*
+TODO
+- Error handling, logging, tests
+- Remove, upgrade, install AIIDA + sealed secrets controller
+- Remove, upgrade, install other services
+- Add REST access from AIIDA core (restricted access!)
+- Restrict access to namespace
+*/
