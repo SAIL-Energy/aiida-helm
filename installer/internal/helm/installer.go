@@ -5,6 +5,7 @@ import (
 	helm "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
 	"log"
 	"time"
@@ -16,7 +17,7 @@ const repositoryConfig = "/tmp/.helmrepo"
 func GetChartSpec(namespace string, repository repo.Entry, chartName string, valuesOptions values.Options) helm.ChartSpec {
 	return helm.ChartSpec{
 		ReleaseName:     chartName,
-		ChartName:       repository.Name + "/" + chartName,
+		ChartName:       getFullChartName(repository.Name, chartName),
 		Namespace:       namespace,
 		CreateNamespace: true,
 		ValuesOptions:   valuesOptions,
@@ -25,7 +26,7 @@ func GetChartSpec(namespace string, repository repo.Entry, chartName string, val
 	}
 }
 
-func GetVersionInfo(repository repo.Entry, namespace string) ([]*VersionInfo, error) {
+func GetVersionInfosRepo(repository repo.Entry, namespace string) ([]*VersionInfo, error) {
 	helmClient, err := getHelmClient(namespace)
 	if err != nil {
 		return nil, err
@@ -35,25 +36,27 @@ func GetVersionInfo(repository repo.Entry, namespace string) ([]*VersionInfo, er
 		return nil, err
 	}
 
-	releases, err := helmClient.ListReleasesByStateMask(action.ListAll)
+	chartReleases, err := helmClient.ListReleasesByStateMask(action.ListAll)
 	if err != nil {
 		return nil, err
 	}
 
 	var versionInfos []*VersionInfo
-	for _, release := range releases {
-		versionInfo := &VersionInfo{
-			ReleaseName:    release.Name,
-			ReleaseInfo:    release.Info,
-			InstalledChart: release.Chart.Metadata,
+	for _, chartRelease := range chartReleases {
+		chartName := getFullChartName(repository.Name, chartRelease.Chart.Name())
+
+		versionInfo, err := buildVersionInfo(helmClient, chartRelease, chartName)
+		if err != nil {
+			return nil, err
 		}
+
 		versionInfos = append(versionInfos, versionInfo)
 	}
 
 	return versionInfos, nil
 }
 
-func GetSingleVersionInfo(repository repo.Entry, chartSpec helm.ChartSpec) (*VersionInfo, error) {
+func GetVersionInfo(repository repo.Entry, chartSpec helm.ChartSpec) (*VersionInfo, error) {
 	helmClient, err := getHelmClient(chartSpec.Namespace)
 	if err != nil {
 		return nil, err
@@ -63,24 +66,12 @@ func GetSingleVersionInfo(repository repo.Entry, chartSpec helm.ChartSpec) (*Ver
 		return nil, err
 	}
 
-	release, err := helmClient.GetRelease(chartSpec.ReleaseName)
+	chartRelease, err := helmClient.GetRelease(chartSpec.ReleaseName)
 	if err != nil {
 		return nil, err
 	}
 
-	chart, _, err := helmClient.GetChart("aiida/aiida", &action.ChartPathOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	versionInfo := &VersionInfo{
-		ReleaseName:    release.Name,
-		ReleaseInfo:    release.Info,
-		InstalledChart: release.Chart.Metadata,
-		AvailableChart: chart.Metadata,
-	}
-
-	return versionInfo, nil
+	return buildVersionInfo(helmClient, chartRelease, chartSpec.ChartName)
 }
 
 func Install(repository repo.Entry, chartSpec helm.ChartSpec) error {
@@ -138,14 +129,6 @@ func Uninstall(chartSpec helm.ChartSpec) error {
 	return helmClient.UninstallRelease(&chartSpec)
 }
 
-func addAndUpdateChartRepos(helmClient helm.Client, repository repo.Entry) error {
-	if err := helmClient.AddOrUpdateChartRepo(repository); err != nil {
-		return err
-	}
-
-	return helmClient.UpdateChartRepos()
-}
-
 func getHelmClient(namespace string) (helm.Client, error) {
 	helmOptions := &helm.Options{
 		Namespace:        namespace,
@@ -157,4 +140,32 @@ func getHelmClient(namespace string) (helm.Client, error) {
 	}
 
 	return helm.New(helmOptions)
+}
+
+func addAndUpdateChartRepos(helmClient helm.Client, repository repo.Entry) error {
+	if err := helmClient.AddOrUpdateChartRepo(repository); err != nil {
+		return err
+	}
+
+	return helmClient.UpdateChartRepos()
+}
+
+func buildVersionInfo(helmClient helm.Client, release *release.Release, chartName string) (*VersionInfo, error) {
+	latestChart, _, err := helmClient.GetChart(chartName, &action.ChartPathOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	versionInfo := &VersionInfo{
+		ReleaseName:    release.Name,
+		ReleaseInfo:    release.Info,
+		InstalledChart: release.Chart.Metadata,
+		LatestChart:    latestChart.Metadata,
+	}
+
+	return versionInfo, nil
+}
+
+func getFullChartName(repoName string, chartName string) string {
+	return repoName + "/" + chartName
 }

@@ -6,8 +6,8 @@ import (
 )
 
 type VersionInfo struct {
-	ReleaseName    string          `json:"releaseName"`
-	ReleaseInfo    *release.Info   `json:"releaseInfo"`
-	InstalledChart *chart.Metadata `json:"installedChart"`
-	AvailableChart *chart.Metadata `json:"availableChart"`
+	ReleaseName    string          `json:"release_name"`
+	ReleaseInfo    *release.Info   `json:"release_info"`
+	InstalledChart *chart.Metadata `json:"installed_chart"`
+	LatestChart    *chart.Metadata `json:"latest_chart"`
 }

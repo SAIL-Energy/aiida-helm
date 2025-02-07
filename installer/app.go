@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/eddie-energy/aiida-helm/installer/internal/helm/aiida"
-	"github.com/eddie-energy/aiida-helm/installer/internal/helm/service"
+	"github.com/eddie-energy/aiida-helm/installer/internal/helm/services"
 	"github.com/gorilla/mux"
 	"helm.sh/helm/v3/pkg/repo"
 	"log"
@@ -19,10 +19,10 @@ const pathService = "/service"
 const varChartName = "chartName"
 
 type App struct {
-	Router           *mux.Router
-	Repository       repo.Entry
-	AiidaInstaller   *aiida.Installer
-	ServiceInstaller *service.Installer
+	Router            *mux.Router
+	Repository        repo.Entry
+	AiidaInstaller    *aiida.Installer
+	ServicesInstaller *services.Installer
 }
 
 func (app *App) Run(addr string) {
@@ -33,7 +33,7 @@ func (app *App) Run(addr string) {
 		PassCredentialsAll: true,
 	}
 	app.AiidaInstaller = aiida.NewInstaller(app.Repository)
-	app.ServiceInstaller = service.NewInstaller(app.Repository)
+	app.ServicesInstaller = services.NewInstaller(app.Repository)
 
 	app.initializeRoutes()
 	log.Fatal(http.ListenAndServe(addr, app.Router))
@@ -46,8 +46,8 @@ func (app *App) initializeRoutes() {
 	app.Router.HandleFunc(pathAiida, app.installAiida).Methods("POST")
 	app.Router.HandleFunc(pathAiida, app.upgradeAiida).Methods("PUT")
 
-	app.Router.HandleFunc(pathService, app.getVersionInfoService).Methods("GET")
-	app.Router.HandleFunc(fullServicePath, app.getSingleVersionInfoService).Methods("GET")
+	app.Router.HandleFunc(pathService, app.getsVersionInfosRepoServices).Methods("GET")
+	app.Router.HandleFunc(fullServicePath, app.getVersionInfoService).Methods("GET")
 	app.Router.HandleFunc(fullServicePath, app.installService).Methods("POST")
 	app.Router.HandleFunc(fullServicePath, app.upgradeService).Methods("PUT")
 	app.Router.HandleFunc(fullServicePath, app.uninstallService).Methods("DELETE")
@@ -81,8 +81,8 @@ func (app *App) upgradeAiida(responseWriter http.ResponseWriter, _ *http.Request
 	app.respondWithJSON(responseWriter, http.StatusOK, map[string]string{"message": "Upgrade successful"})
 }
 
-func (app *App) getVersionInfoService(responseWriter http.ResponseWriter, _ *http.Request) {
-	versionInfo, err := app.ServiceInstaller.GetVersionInfo()
+func (app *App) getsVersionInfosRepoServices(responseWriter http.ResponseWriter, _ *http.Request) {
+	versionInfo, err := app.ServicesInstaller.GetVersionInfosRepo()
 	if err != nil {
 		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
 		return
@@ -91,10 +91,10 @@ func (app *App) getVersionInfoService(responseWriter http.ResponseWriter, _ *htt
 	app.respondWithJSON(responseWriter, http.StatusOK, versionInfo)
 }
 
-func (app *App) getSingleVersionInfoService(responseWriter http.ResponseWriter, request *http.Request) {
+func (app *App) getVersionInfoService(responseWriter http.ResponseWriter, request *http.Request) {
 	chartName := mux.Vars(request)[varChartName]
 
-	versionInfo, err := app.ServiceInstaller.GetSingleVersionInfo(chartName)
+	versionInfo, err := app.ServicesInstaller.GetVersionInfo(chartName)
 	if err != nil {
 		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
 		return
@@ -106,7 +106,7 @@ func (app *App) getSingleVersionInfoService(responseWriter http.ResponseWriter, 
 func (app *App) installService(responseWriter http.ResponseWriter, request *http.Request) {
 	chartName := mux.Vars(request)[varChartName]
 
-	if err := app.ServiceInstaller.Install(chartName); err != nil {
+	if err := app.ServicesInstaller.Install(chartName); err != nil {
 		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -117,7 +117,7 @@ func (app *App) installService(responseWriter http.ResponseWriter, request *http
 func (app *App) upgradeService(responseWriter http.ResponseWriter, request *http.Request) {
 	chartName := mux.Vars(request)[varChartName]
 
-	if err := app.ServiceInstaller.Upgrade(chartName); err != nil {
+	if err := app.ServicesInstaller.Upgrade(chartName); err != nil {
 		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -128,7 +128,7 @@ func (app *App) upgradeService(responseWriter http.ResponseWriter, request *http
 func (app *App) uninstallService(responseWriter http.ResponseWriter, request *http.Request) {
 	chartName := mux.Vars(request)[varChartName]
 
-	if err := app.ServiceInstaller.Uninstall(chartName); err != nil {
+	if err := app.ServicesInstaller.Uninstall(chartName); err != nil {
 		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
 		return
 	}

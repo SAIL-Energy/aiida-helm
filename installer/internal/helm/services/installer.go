@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	helmInstaller "github.com/eddie-energy/aiida-helm/installer/internal/helm"
@@ -17,14 +17,14 @@ func NewInstaller(repository repo.Entry) *Installer {
 	return &Installer{Repository: repository}
 }
 
-func (serviceInstaller *Installer) GetVersionInfo() ([]*helmInstaller.VersionInfo, error) {
-	return helmInstaller.GetVersionInfo(serviceInstaller.Repository, namespace)
+func (serviceInstaller *Installer) GetVersionInfosRepo() ([]*helmInstaller.VersionInfo, error) {
+	return helmInstaller.GetVersionInfosRepo(serviceInstaller.Repository, namespace)
 }
 
-func (serviceInstaller *Installer) GetSingleVersionInfo(chartName string) (*helmInstaller.VersionInfo, error) {
+func (serviceInstaller *Installer) GetVersionInfo(chartName string) (*helmInstaller.VersionInfo, error) {
 	chartSpec := serviceInstaller.getChartSpec(chartName)
 
-	return helmInstaller.GetSingleVersionInfo(serviceInstaller.Repository, chartSpec)
+	return helmInstaller.GetVersionInfo(serviceInstaller.Repository, chartSpec)
 }
 
 func (serviceInstaller *Installer) Install(chartName string) error {

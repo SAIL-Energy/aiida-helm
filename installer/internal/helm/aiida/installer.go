@@ -36,7 +36,7 @@ func NewInstaller(repository repo.Entry) *Installer {
 }
 
 func (aiidaInstaller *Installer) GetVersionInfo() (*helmInstaller.VersionInfo, error) {
-	return helmInstaller.GetSingleVersionInfo(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
+	return helmInstaller.GetVersionInfo(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
 }
 
 func (aiidaInstaller *Installer) Install() error {
