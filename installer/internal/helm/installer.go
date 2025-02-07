@@ -68,10 +68,16 @@ func GetSingleVersionInfo(repository repo.Entry, chartSpec helm.ChartSpec) (*Ver
 		return nil, err
 	}
 
+	chart, _, err := helmClient.GetChart("aiida/aiida", &action.ChartPathOptions{})
+	if err != nil {
+		return nil, err
+	}
+
 	versionInfo := &VersionInfo{
 		ReleaseName:    release.Name,
 		ReleaseInfo:    release.Info,
 		InstalledChart: release.Chart.Metadata,
+		AvailableChart: chart.Metadata,
 	}
 
 	return versionInfo, nil

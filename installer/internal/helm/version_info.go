@@ -9,4 +9,5 @@ type VersionInfo struct {
 	ReleaseName    string          `json:"releaseName"`
 	ReleaseInfo    *release.Info   `json:"releaseInfo"`
 	InstalledChart *chart.Metadata `json:"installedChart"`
+	AvailableChart *chart.Metadata `json:"availableChart"`
 }
