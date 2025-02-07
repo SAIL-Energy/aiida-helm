@@ -5,7 +5,6 @@ import (
 	"helm.sh/helm/v3/pkg/repo"
 )
 
-const ServiceReleaseNamePrefix = "aiida-service"
 const ServiceNamespace = "aiida-services"
 
 type ServiceInstaller struct {
@@ -17,8 +16,7 @@ func NewServiceInstaller(repository repo.Entry) *ServiceInstaller {
 }
 
 func (serviceInstaller *ServiceInstaller) Install(chartName string) error {
-	releaseName := ServiceReleaseNamePrefix + "-" + chartName
-	chartSpec := GetChartSpec(ServiceNamespace, serviceInstaller.Repository, chartName, releaseName, values.Options{})
+	chartSpec := GetChartSpec(ServiceNamespace, serviceInstaller.Repository, chartName, values.Options{})
 
 	_ = Uninstall(chartSpec)
 	return Install(serviceInstaller.Repository, chartSpec)

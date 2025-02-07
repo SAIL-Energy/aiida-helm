@@ -12,9 +12,9 @@ import (
 const RepositoryCache = "/tmp/.helmcache"
 const RepositoryConfig = "/tmp/.helmrepo"
 
-func GetChartSpec(namespace string, repository repo.Entry, chartName string, releaseName string, valuesOptions values.Options) helmclient.ChartSpec {
+func GetChartSpec(namespace string, repository repo.Entry, chartName string, valuesOptions values.Options) helmclient.ChartSpec {
 	return helmclient.ChartSpec{
-		ReleaseName:     releaseName,
+		ReleaseName:     chartName,
 		ChartName:       repository.Name + "/" + chartName,
 		Namespace:       namespace,
 		CreateNamespace: true,

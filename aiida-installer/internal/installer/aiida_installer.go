@@ -8,8 +8,7 @@ import (
 	"os"
 )
 
-const AiidaReleaseName = "aiida"
-const AiidaChartName = "aiida-chart"
+const AiidaChartName = "aiida"
 const AiidaNamespace = "hardening"
 
 const SealedSecretsController = "sealed-secrets-controller"
@@ -31,12 +30,12 @@ func NewAiidaInstaller(repository repo.Entry) *AiidaInstaller {
 
 	return &AiidaInstaller{
 		Repository: repository,
-		ChartSpec:  GetChartSpec(AiidaNamespace, repository, AiidaChartName, AiidaReleaseName, valuesOptions),
+		ChartSpec:  GetChartSpec(AiidaNamespace, repository, AiidaChartName, valuesOptions),
 	}
 }
 
 func (aiidaInstaller *AiidaInstaller) Install() error {
-	err := secrets.EncryptSecrets(AiidaNamespace, SealedSecretsController, AiidaReleaseName, SecretsPath, SealedSecretsPath)
+	err := secrets.EncryptSecrets(AiidaNamespace, SealedSecretsController, AiidaChartName, SecretsPath, SealedSecretsPath)
 	if err != nil {
 		return err
 	}
