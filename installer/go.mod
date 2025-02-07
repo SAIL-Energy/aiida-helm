@@ -1,4 +1,4 @@
-module github.com/eddie-energy/aiida-helm/aiida-installer
+module github.com/eddie-energy/aiida-helm/installer
 
 go 1.23.4
 

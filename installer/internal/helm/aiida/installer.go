@@ -1,8 +1,8 @@
 package aiida
 
 import (
-	helmInstaller "github.com/eddie-energy/aiida-helm/aiida-installer/internal/helm"
-	"github.com/eddie-energy/aiida-helm/aiida-installer/internal/secrets"
+	helmInstaller "github.com/eddie-energy/aiida-helm/installer/internal/helm"
+	"github.com/eddie-energy/aiida-helm/installer/internal/secrets"
 	helm "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/repo"
@@ -44,6 +44,7 @@ func (aiidaInstaller *Installer) Install() error {
 		return err
 	}
 
+	_ = helmInstaller.Uninstall(aiidaInstaller.ChartSpec)
 	return helmInstaller.Install(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
 }
 

@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/eddie-energy/aiida-helm/aiida-installer/internal/helm/aiida"
-	"github.com/eddie-energy/aiida-helm/aiida-installer/internal/helm/service"
+	"github.com/eddie-energy/aiida-helm/installer/internal/helm/aiida"
+	"github.com/eddie-energy/aiida-helm/installer/internal/helm/service"
 	"github.com/gorilla/mux"
 	"helm.sh/helm/v3/pkg/repo"
 	"log"

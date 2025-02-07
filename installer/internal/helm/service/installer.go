@@ -1,7 +1,7 @@
 package service
 
 import (
-	helmInstaller "github.com/eddie-energy/aiida-helm/aiida-installer/internal/helm"
+	helmInstaller "github.com/eddie-energy/aiida-helm/installer/internal/helm"
 	helm "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/repo"

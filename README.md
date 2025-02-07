@@ -23,7 +23,7 @@ export NAMESPACE=mynamespace
 
 Create initial values file:
 ```bash
-touch aiida-chart/values-$NAMESPACE.yaml
+touch chart/values-$NAMESPACE.yaml
 ```
 
 The `setup-arch.bash` script is designed to set up all the necessary tools for Arch. Before running the script, you need to create a personal access token in GitHub with the `read:packages` scope. The username should be your GitHub username.
