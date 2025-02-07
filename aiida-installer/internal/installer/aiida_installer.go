@@ -5,16 +5,18 @@ import (
 	helmclient "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/repo"
+	"os"
 )
 
-const ReleaseName = "aiida"
-const ChartName = "aiida-chart"
-const Namespace = "hardening"
+const AiidaReleaseName = "aiida"
+const AiidaChartName = "aiida-chart"
+const AiidaNamespace = "hardening"
 
 const SealedSecretsController = "sealed-secrets-controller"
 
 const SecretsPath = "configs/secrets-template.yaml"
 const SealedSecretsPath = "configs/secrets.yaml"
+const CustomAiidaValues = "configs/aiida-values.yaml"
 
 type AiidaInstaller struct {
 	Repository repo.Entry
@@ -22,20 +24,19 @@ type AiidaInstaller struct {
 }
 
 func NewAiidaInstaller(repository repo.Entry) *AiidaInstaller {
+	valuesOptions := values.Options{ValueFiles: []string{SealedSecretsPath}}
+	if _, err := os.Stat(CustomAiidaValues); err == nil {
+		valuesOptions.ValueFiles = append(valuesOptions.ValueFiles, CustomAiidaValues)
+	}
+
 	return &AiidaInstaller{
 		Repository: repository,
-		ChartSpec: GetChartSpec(
-			Namespace,
-			repository,
-			ChartName,
-			ReleaseName,
-			values.Options{ValueFiles: []string{SealedSecretsPath}},
-		),
+		ChartSpec:  GetChartSpec(AiidaNamespace, repository, AiidaChartName, AiidaReleaseName, valuesOptions),
 	}
 }
 
 func (aiidaInstaller *AiidaInstaller) Install() error {
-	err := secrets.EncryptSecrets(Namespace, SealedSecretsController, ReleaseName, SecretsPath, SealedSecretsPath)
+	err := secrets.EncryptSecrets(AiidaNamespace, SealedSecretsController, AiidaReleaseName, SecretsPath, SealedSecretsPath)
 	if err != nil {
 		return err
 	}

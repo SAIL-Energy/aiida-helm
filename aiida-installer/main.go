@@ -12,5 +12,4 @@ TODO
 - Remove, upgrade, install other services
 - Add REST access from AIIDA core (restricted access!)
 - Restrict access to namespace
-- Add possibility for additional values files
 */
