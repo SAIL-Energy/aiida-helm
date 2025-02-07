@@ -8,8 +8,8 @@ func main() {
 /*
 TODO
 - Error handling, logging, tests
-- Remove, upgrade, install AIIDA + sealed secrets controller
-- Remove, upgrade, install other services
+- Also install sealed secrets controller
+- Add available chart versions
 - Add REST access from AIIDA core (restricted access!)
 - Restrict access to namespace
 */

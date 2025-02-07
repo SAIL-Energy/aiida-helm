@@ -96,8 +96,8 @@ func readFromYamlFile(filePath string) (map[string]map[string]string, error) {
 	}
 
 	var values map[string]map[string]string
-	err = yaml.Unmarshal(data, &values)
-	if err != nil {
+
+	if err = yaml.Unmarshal(data, &values); err != nil {
 		return nil, err
 	}
 
