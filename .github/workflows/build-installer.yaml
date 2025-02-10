@@ -10,12 +10,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: "Docker build image"
         shell: bash
         run: docker build -t aiida-installer ./installer/src
+
       - name: "ghcr.io login"
         shell: bash
         run: echo "${{ secrets.GITHUB_TOKEN }} " | docker login ghcr.io -u $ --password-stdin
+
       - name: "Docker push image"
         shell: bash
         run: |
@@ -27,6 +34,7 @@ jobs:
           echo VERSION: $VERSION
           docker tag ${IMAGE_NAME} $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
+
       - name: "Post ghcr.io login"
         shell: bash
         run: rm $HOME/.docker/config.json
