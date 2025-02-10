@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-core
+  {{- include "installer.core.labels" . | indent 2 }}
+spec:
+  replicas: {{ .Values.core.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-core
+  template:
+    metadata:
+    {{- include "installer.core.labels" . | indent 6 }}
+    spec:
+      containers:
+        - name: aiida-service-awattar
+          image: "ghcr.io/eddie-energy/aiida-installer:{{ .Values.core.version }}"
+          ports:
+            - containerPort: {{ .Values.core.port }}
+              name: core
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: core
+
+      imagePullSecrets:
+        - name: {{ .Values.ghcrImagePullSecrets.name }}

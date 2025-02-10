@@ -42,6 +42,8 @@ func (app *App) Run(addr string) {
 func (app *App) initializeRoutes() {
 	fullServicePath := fmt.Sprintf("%s/{%s:.*}", pathService, varChartName)
 
+	app.Router.HandleFunc("/health", app.getHealthCheck).Methods("GET")
+
 	app.Router.HandleFunc(pathAiida, app.getVersionInfoAiida).Methods("GET")
 	app.Router.HandleFunc(pathAiida, app.installAiida).Methods("POST")
 	app.Router.HandleFunc(pathAiida, app.upgradeAiida).Methods("PUT")
@@ -52,6 +54,10 @@ func (app *App) initializeRoutes() {
 	app.Router.HandleFunc(fullServicePath, app.installService).Methods("POST")
 	app.Router.HandleFunc(fullServicePath, app.upgradeService).Methods("PUT")
 	app.Router.HandleFunc(fullServicePath, app.uninstallService).Methods("DELETE")
+}
+
+func (app *App) getHealthCheck(responseWriter http.ResponseWriter, _ *http.Request) {
+	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessResponse())
 }
 
 func (app *App) getVersionInfoAiida(responseWriter http.ResponseWriter, _ *http.Request) {
