@@ -32,11 +32,11 @@ func NewInstaller(namespace string) *Installer {
 	}
 }
 
-func (secretsInstaller *Installer) Install() error {
+func (secretsInstaller *Installer) Install() (*helmInstaller.VersionInfo, error) {
 	return helmInstaller.Install(secretsInstaller.Repository, secretsInstaller.ChartSpec)
 }
 
-func (secretsInstaller *Installer) Upgrade() error {
+func (secretsInstaller *Installer) Upgrade() (*helmInstaller.VersionInfo, error) {
 	return helmInstaller.Upgrade(secretsInstaller.Repository, secretsInstaller.ChartSpec)
 }
 

@@ -39,26 +39,22 @@ func (aiidaInstaller *Installer) GetVersionInfo() (*helmInstaller.VersionInfo, e
 	return helmInstaller.GetVersionInfo(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
 }
 
-func (aiidaInstaller *Installer) Install() error {
-	if err := aiidaInstaller.SecretsInstaller.Install(); err != nil {
-		return err
+func (aiidaInstaller *Installer) Install() (*helmInstaller.VersionInfo, error) {
+	if _, err := aiidaInstaller.SecretsInstaller.Install(); err != nil {
+		return nil, err
 	}
 
-	if err := secrets.EncryptSecrets(
-		namespace,
-		secrets.ControllerName,
-		chartName, secretsPath,
-		sealedSecretsPath,
-	); err != nil {
-		return err
+	err := secrets.EncryptSecrets(namespace, secrets.ControllerName, chartName, secretsPath, sealedSecretsPath)
+	if err != nil {
+		return nil, err
 	}
 
 	return helmInstaller.Install(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
 }
 
-func (aiidaInstaller *Installer) Upgrade() error {
-	if err := aiidaInstaller.SecretsInstaller.Upgrade(); err != nil {
-		return err
+func (aiidaInstaller *Installer) Upgrade() (*helmInstaller.VersionInfo, error) {
+	if _, err := aiidaInstaller.SecretsInstaller.Upgrade(); err != nil {
+		return nil, err
 	}
 
 	return helmInstaller.Upgrade(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)

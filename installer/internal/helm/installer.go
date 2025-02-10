@@ -5,6 +5,7 @@ import (
 	helm "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
 	"log"
@@ -46,7 +47,8 @@ func GetVersionInfosRepo(repository repo.Entry, namespace string) ([]*VersionInf
 	for _, chartRelease := range chartReleases {
 		chartName := getFullChartName(repository.Name, chartRelease.Chart.Name())
 
-		versionInfo, err := buildVersionInfo(helmClient, chartRelease, chartName)
+		versionInfo := buildVersionInfo(chartRelease)
+		versionInfo.LatestChart, err = getLatestChartMetadata(helmClient, chartName)
 		if err != nil {
 			return nil, err
 		}
@@ -72,53 +74,52 @@ func GetVersionInfo(repository repo.Entry, chartSpec helm.ChartSpec) (*VersionIn
 		return nil, err
 	}
 
-	return buildVersionInfo(helmClient, chartRelease, chartSpec.ChartName)
+	versionInfo := buildVersionInfo(chartRelease)
+	versionInfo.LatestChart, err = getLatestChartMetadata(helmClient, chartSpec.ChartName)
+
+	return versionInfo, err
 }
 
-func Install(repository repo.Entry, chartSpec helm.ChartSpec) error {
+func Install(repository repo.Entry, chartSpec helm.ChartSpec) (*VersionInfo, error) {
 	helmClient, err := getHelmClient(chartSpec.Namespace)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := addAndUpdateChartRepos(helmClient, repository); err != nil {
-		return err
+		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 
-	installedHelmChart, err := helmClient.InstallChart(ctx, &chartSpec, nil)
+	chartRelease, err := helmClient.InstallChart(ctx, &chartSpec, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	log.Printf("Status of Chart Install %v,\n", *installedHelmChart.Info)
-
-	return nil
+	return buildVersionInfo(chartRelease), nil
 }
 
-func Upgrade(repository repo.Entry, chartSpec helm.ChartSpec) error {
+func Upgrade(repository repo.Entry, chartSpec helm.ChartSpec) (*VersionInfo, error) {
 	helmClient, err := getHelmClient(chartSpec.Namespace)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := addAndUpdateChartRepos(helmClient, repository); err != nil {
-		return err
+		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 
-	installedHelmChart, err := helmClient.UpgradeChart(ctx, &chartSpec, nil)
+	chartRelease, err := helmClient.UpgradeChart(ctx, &chartSpec, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	log.Printf("Status of Chart Upgrade %v,\n", *installedHelmChart.Info)
-
-	return nil
+	return buildVersionInfo(chartRelease), nil
 }
 
 func Uninstall(chartSpec helm.ChartSpec) error {
@@ -151,20 +152,21 @@ func addAndUpdateChartRepos(helmClient helm.Client, repository repo.Entry) error
 	return helmClient.UpdateChartRepos()
 }
 
-func buildVersionInfo(helmClient helm.Client, release *release.Release, chartName string) (*VersionInfo, error) {
+func buildVersionInfo(release *release.Release) *VersionInfo {
+	return &VersionInfo{
+		ReleaseName:    release.Name,
+		ReleaseInfo:    release.Info,
+		InstalledChart: release.Chart.Metadata,
+	}
+}
+
+func getLatestChartMetadata(helmClient helm.Client, chartName string) (*chart.Metadata, error) {
 	latestChart, _, err := helmClient.GetChart(chartName, &action.ChartPathOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	versionInfo := &VersionInfo{
-		ReleaseName:    release.Name,
-		ReleaseInfo:    release.Info,
-		InstalledChart: release.Chart.Metadata,
-		LatestChart:    latestChart.Metadata,
-	}
-
-	return versionInfo, nil
+	return latestChart.Metadata, nil
 }
 
 func getFullChartName(repoName string, chartName string) string {

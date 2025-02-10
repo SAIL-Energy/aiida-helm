@@ -57,48 +57,50 @@ func (app *App) initializeRoutes() {
 func (app *App) getVersionInfoAiida(responseWriter http.ResponseWriter, _ *http.Request) {
 	versionInfo, err := app.AiidaInstaller.GetVersionInfo()
 	if err != nil {
-		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, versionInfo)
+	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
 }
 
 func (app *App) installAiida(responseWriter http.ResponseWriter, _ *http.Request) {
-	if err := app.AiidaInstaller.Install(); err != nil {
-		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
+	versionInfo, err := app.AiidaInstaller.Install()
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, map[string]string{"message": "Installation successful"})
+	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
 }
 
 func (app *App) upgradeAiida(responseWriter http.ResponseWriter, _ *http.Request) {
-	if err := app.AiidaInstaller.Upgrade(); err != nil {
-		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
+	versionInfo, err := app.AiidaInstaller.Upgrade()
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, map[string]string{"message": "Upgrade successful"})
+	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
 }
 
 func (app *App) uninstallAiida(responseWriter http.ResponseWriter, _ *http.Request) {
 	if err := app.AiidaInstaller.Uninstall(); err != nil {
-		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, map[string]string{"message": "Uninstallation successful"})
+	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessResponse())
 }
 
 func (app *App) getsVersionInfosRepoServices(responseWriter http.ResponseWriter, _ *http.Request) {
-	versionInfo, err := app.ServicesInstaller.GetVersionInfosRepo()
+	versionInfos, err := app.ServicesInstaller.GetVersionInfosRepo()
 	if err != nil {
-		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, versionInfo)
+	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfos))
 }
 
 func (app *App) getVersionInfoService(responseWriter http.ResponseWriter, request *http.Request) {
@@ -106,59 +108,53 @@ func (app *App) getVersionInfoService(responseWriter http.ResponseWriter, reques
 
 	versionInfo, err := app.ServicesInstaller.GetVersionInfo(chartName)
 	if err != nil {
-		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, versionInfo)
+	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
 }
 
 func (app *App) installService(responseWriter http.ResponseWriter, request *http.Request) {
 	chartName := mux.Vars(request)[varChartName]
 
-	if err := app.ServicesInstaller.Install(chartName); err != nil {
-		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
+	versionInfo, err := app.ServicesInstaller.Install(chartName)
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, map[string]string{"message": "Installation successful"})
+	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
 }
 
 func (app *App) upgradeService(responseWriter http.ResponseWriter, request *http.Request) {
 	chartName := mux.Vars(request)[varChartName]
 
-	if err := app.ServicesInstaller.Upgrade(chartName); err != nil {
-		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
+	versionInfo, err := app.ServicesInstaller.Upgrade(chartName)
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, map[string]string{"message": "Upgrade successful"})
+	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
 }
 
 func (app *App) uninstallService(responseWriter http.ResponseWriter, request *http.Request) {
 	chartName := mux.Vars(request)[varChartName]
 
 	if err := app.ServicesInstaller.Uninstall(chartName); err != nil {
-		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, map[string]string{"message": "Uninstallation successful"})
+	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessResponse())
 }
 
-func (app *App) respondWithError(responseWriter http.ResponseWriter, code int, message string) {
-	app.respondWithJSON(responseWriter, code, map[string]string{"error": message})
-}
-
-func (app *App) respondWithJSON(responseWriter http.ResponseWriter, code int, payload interface{}) {
-	response, _ := json.Marshal(payload)
+func (app *App) respondWithJSON(responseWriter http.ResponseWriter, code int, response Response) {
+	responseJson, _ := json.Marshal(response)
 
 	responseWriter.Header().Set("Content-Type", "application/json")
 	responseWriter.WriteHeader(code)
 
-	_, err := responseWriter.Write(response)
-	if err != nil {
-		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
-		return
-	}
+	_, _ = responseWriter.Write(responseJson)
 }
