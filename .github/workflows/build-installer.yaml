@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: "Docker build image"
         shell: bash
-        run: docker build -f ./src/Dockerfile -t aiida-installer ./src
+        run: docker build -t aiida-installer ./installer/src
       - name: "ghcr.io login"
         shell: bash
         run: echo "${{ secrets.GITHUB_TOKEN }} " | docker login ghcr.io -u $ --password-stdin
