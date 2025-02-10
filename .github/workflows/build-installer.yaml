@@ -1,0 +1,32 @@
+name: Build and Push AIIDA Installer
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Docker build image"
+        shell: bash
+        run: docker build -f ./src/Dockerfile -t aiida-installer ./src
+      - name: "ghcr.io login"
+        shell: bash
+        run: echo "${{ secrets.GITHUB_TOKEN }} " | docker login ghcr.io -u $ --password-stdin
+      - name: "Docker push image"
+        shell: bash
+        run: |
+          IMAGE_NAME=aiida-installer
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}
+          VERSION=latest
+          echo IMAGE_NAME: $IMAGE_NAME
+          echo IMAGE_ID: $IMAGE_ID
+          echo VERSION: $VERSION
+          docker tag ${IMAGE_NAME} $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
+      - name: "Post ghcr.io login"
+        shell: bash
+        run: rm $HOME/.docker/config.json

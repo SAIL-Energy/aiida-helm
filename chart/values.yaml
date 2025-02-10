@@ -3,7 +3,7 @@ ghcrImagePullSecrets:
 
 ingress:
   host: "localhost"
-  tlsEnabled: "false"
+  tlsEnabled: false
 
 core:
   replicaCount: 1
@@ -30,7 +30,7 @@ nanomq:
   wsPort: 8083
 
 teleinfo2mqtt:
-  enabled: "false"
+  enabled: false
   replicaCount: 1
   version: "latest"
   serial: "/dev/tty4"

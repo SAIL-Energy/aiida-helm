@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
   annotations:
-  {{- if eq .Values.ingress.tlsEnabled "true" }}
+  {{- if .Values.ingress.tlsEnabled }}
     cert-manager.io/cluster-issuer: {{ .Release.Name }}-cluster-issuer
   {{- end }}
 
@@ -31,7 +31,7 @@ spec:
                 name: {{ .Release.Name }}-core
                 port:
                   name: core
-{{- if eq .Values.ingress.tlsEnabled "true" }}
+{{- if .Values.ingress.tlsEnabled }}
   tls:
     - hosts:
         - {{ .Values.ingress.host }}
