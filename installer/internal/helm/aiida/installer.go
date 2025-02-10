@@ -12,15 +12,14 @@ import (
 const chartName = "aiida"
 const namespace = "hardening"
 
-const sealedSecretsController = "sealed-secrets-controller"
-
 const secretsPath = "configs/secrets-template.yaml"
 const sealedSecretsPath = "configs/secrets.yaml"
 const customValues = "configs/aiida-values.yaml"
 
 type Installer struct {
-	Repository repo.Entry
-	ChartSpec  helm.ChartSpec
+	Repository       repo.Entry
+	ChartSpec        helm.ChartSpec
+	SecretsInstaller *secrets.Installer
 }
 
 func NewInstaller(repository repo.Entry) *Installer {
@@ -30,8 +29,9 @@ func NewInstaller(repository repo.Entry) *Installer {
 	}
 
 	return &Installer{
-		Repository: repository,
-		ChartSpec:  helmInstaller.GetChartSpec(namespace, repository, chartName, valuesOptions),
+		Repository:       repository,
+		ChartSpec:        helmInstaller.GetChartSpec(namespace, repository, chartName, valuesOptions, false),
+		SecretsInstaller: secrets.NewInstaller(namespace),
 	}
 }
 
@@ -40,14 +40,34 @@ func (aiidaInstaller *Installer) GetVersionInfo() (*helmInstaller.VersionInfo, e
 }
 
 func (aiidaInstaller *Installer) Install() error {
-	if err := secrets.EncryptSecrets(namespace, sealedSecretsController, chartName, secretsPath, sealedSecretsPath); err != nil {
+	if err := aiidaInstaller.SecretsInstaller.Install(); err != nil {
 		return err
 	}
 
-	_ = helmInstaller.Uninstall(aiidaInstaller.ChartSpec)
+	if err := secrets.EncryptSecrets(
+		namespace,
+		secrets.ControllerName,
+		chartName, secretsPath,
+		sealedSecretsPath,
+	); err != nil {
+		return err
+	}
+
 	return helmInstaller.Install(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
 }
 
 func (aiidaInstaller *Installer) Upgrade() error {
+	if err := aiidaInstaller.SecretsInstaller.Upgrade(); err != nil {
+		return err
+	}
+
 	return helmInstaller.Upgrade(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
+}
+
+func (aiidaInstaller *Installer) Uninstall() error {
+	if err := helmInstaller.Uninstall(aiidaInstaller.ChartSpec); err != nil {
+		return err
+	}
+
+	return aiidaInstaller.SecretsInstaller.Uninstall()
 }

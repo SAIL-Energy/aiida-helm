@@ -14,7 +14,7 @@ import (
 const repositoryCache = "/tmp/.helmcache"
 const repositoryConfig = "/tmp/.helmrepo"
 
-func GetChartSpec(namespace string, repository repo.Entry, chartName string, valuesOptions values.Options) helm.ChartSpec {
+func GetChartSpec(namespace string, repository repo.Entry, chartName string, valuesOptions values.Options, wait bool) helm.ChartSpec {
 	return helm.ChartSpec{
 		ReleaseName:     chartName,
 		ChartName:       getFullChartName(repository.Name, chartName),
@@ -22,7 +22,8 @@ func GetChartSpec(namespace string, repository repo.Entry, chartName string, val
 		CreateNamespace: true,
 		ValuesOptions:   valuesOptions,
 		SkipCRDs:        true,
-		Wait:            true,
+		Wait:            wait,
+		Timeout:         30 * time.Minute,
 	}
 }
 

@@ -40,5 +40,5 @@ func (serviceInstaller *Installer) Uninstall(chartName string) error {
 }
 
 func (serviceInstaller *Installer) getChartSpec(chartName string) helm.ChartSpec {
-	return helmInstaller.GetChartSpec(namespace, serviceInstaller.Repository, chartName, values.Options{})
+	return helmInstaller.GetChartSpec(namespace, serviceInstaller.Repository, chartName, values.Options{}, false)
 }

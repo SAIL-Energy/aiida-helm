@@ -45,6 +45,7 @@ func (app *App) initializeRoutes() {
 	app.Router.HandleFunc(pathAiida, app.getVersionInfoAiida).Methods("GET")
 	app.Router.HandleFunc(pathAiida, app.installAiida).Methods("POST")
 	app.Router.HandleFunc(pathAiida, app.upgradeAiida).Methods("PUT")
+	app.Router.HandleFunc(pathAiida, app.uninstallAiida).Methods("DELETE")
 
 	app.Router.HandleFunc(pathService, app.getsVersionInfosRepoServices).Methods("GET")
 	app.Router.HandleFunc(fullServicePath, app.getVersionInfoService).Methods("GET")
@@ -79,6 +80,15 @@ func (app *App) upgradeAiida(responseWriter http.ResponseWriter, _ *http.Request
 	}
 
 	app.respondWithJSON(responseWriter, http.StatusOK, map[string]string{"message": "Upgrade successful"})
+}
+
+func (app *App) uninstallAiida(responseWriter http.ResponseWriter, _ *http.Request) {
+	if err := app.AiidaInstaller.Uninstall(); err != nil {
+		app.respondWithError(responseWriter, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	app.respondWithJSON(responseWriter, http.StatusOK, map[string]string{"message": "Uninstallation successful"})
 }
 
 func (app *App) getsVersionInfosRepoServices(responseWriter http.ResponseWriter, _ *http.Request) {

@@ -31,7 +31,7 @@ func EncryptSecrets(namespace string, controllerName string, releaseName string,
 			secretName := fmt.Sprintf("%s-%s-%s", releaseName, deploymentName, secretNameSuffix)
 
 			if secretItem == "" {
-				secretItem, err = password.Generate(64, 10, 10, false, false)
+				secretItem, err = password.Generate(32, 5, 5, false, false)
 
 				if err != nil {
 					return err
