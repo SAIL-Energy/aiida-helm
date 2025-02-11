@@ -57,13 +57,17 @@ func (aiidaInstaller *Installer) Upgrade() (*helmInstaller.VersionInfo, error) {
 		return nil, err
 	}
 
+	err := secrets.EncryptSecrets(namespace, secrets.ControllerName, chartName, secretsPath, sealedSecretsPath)
+	if err != nil {
+		return nil, err
+	}
+
 	return helmInstaller.Upgrade(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
 }
 
 func (aiidaInstaller *Installer) Uninstall() error {
-	if err := helmInstaller.Uninstall(aiidaInstaller.ChartSpec); err != nil {
-		return err
-	}
+	err := helmInstaller.Uninstall(aiidaInstaller.ChartSpec)
+	_ = aiidaInstaller.SecretsInstaller.Uninstall()
 
-	return aiidaInstaller.SecretsInstaller.Uninstall()
+	return err
 }

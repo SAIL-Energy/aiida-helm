@@ -12,8 +12,9 @@ spec:
     metadata:
     {{- include "installer.core.labels" . | indent 6 }}
     spec:
+      serviceAccountName: {{ .Release.Name }}-sa
       containers:
-        - name: aiida-service-awattar
+        - name: aiida-installer
           image: "ghcr.io/eddie-energy/aiida-installer:{{ .Values.core.version }}"
           ports:
             - containerPort: {{ .Values.core.port }}

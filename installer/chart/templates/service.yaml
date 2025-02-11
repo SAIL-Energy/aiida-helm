@@ -4,6 +4,7 @@ metadata:
   name: {{ .Release.Name }}-core
   {{- include "installer.core.labels" . | indent 2 }}
 spec:
+  type: LoadBalancer
   selector:
     app: {{ .Release.Name }}-core
   ports:

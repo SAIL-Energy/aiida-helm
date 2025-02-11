@@ -1,6 +1,6 @@
 # AIIDA Installer
 
-This repository contains the installer for AIIDA and its services.
+This directory contains the installer for AIIDA and its services.
 
 ## TODO
 - Error handling, logging, tests
@@ -10,4 +10,4 @@ This repository contains the installer for AIIDA and its services.
 - Add REST access from AIIDA core (restricted access)
     - Over Secrets?
     - Network Policy?
-- Restrict access to namespace
+- Remove access to namespace from any other resource
