@@ -3,10 +3,9 @@
 This directory contains the installer for AIIDA and its services.
 
 ## TODO
-- Error handling, logging, tests
-- GHCR token for installing AIIDA
+- Improve error handling, logging, tests, ...
 - Install script/documentation for K3s, Helm and AIIDA-Installer
-  - AIIDA Installer runs on K3s as Helm chart
+  - GHCR token for installing AIIDA
 - Add REST access from AIIDA core (restricted access)
     - Over Secrets?
     - Network Policy?

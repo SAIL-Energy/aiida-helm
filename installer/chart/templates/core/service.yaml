@@ -1,12 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-core
+  name: {{ .Release.Name }}
   {{- include "installer.core.labels" . | indent 2 }}
 spec:
-  type: LoadBalancer
   selector:
-    app: {{ .Release.Name }}-core
+    app: {{ .Release.Name }}
   ports:
     - name: core
       port: {{ .Values.core.port }}

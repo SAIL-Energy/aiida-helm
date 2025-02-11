@@ -1,5 +1,5 @@
 RELEASE_NAME?=aiida
-NAMESPACE?=hardening
+NAMESPACE?=beta
 
 template:
 	helm template ./chart \

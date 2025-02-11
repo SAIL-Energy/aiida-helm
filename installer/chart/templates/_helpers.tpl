@@ -9,6 +9,6 @@
 {{/* Metadata for core components */}}
 {{- define "installer.core.labels" }}
 labels:
-  app: {{ .Release.Name }}-core
+  app: {{ .Release.Name }}
 {{- include "installer.labels" . }}
 {{- end }}
