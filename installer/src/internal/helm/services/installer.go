@@ -27,12 +27,8 @@ func (serviceInstaller *Installer) GetVersionInfo(chartName string) (*helmInstal
 	return helmInstaller.GetVersionInfo(serviceInstaller.Repository, chartSpec)
 }
 
-func (serviceInstaller *Installer) Install(chartName string) (*helmInstaller.VersionInfo, error) {
-	return helmInstaller.Install(serviceInstaller.Repository, serviceInstaller.getChartSpec(chartName))
-}
-
-func (serviceInstaller *Installer) Upgrade(chartName string) (*helmInstaller.VersionInfo, error) {
-	return helmInstaller.Upgrade(serviceInstaller.Repository, serviceInstaller.getChartSpec(chartName))
+func (serviceInstaller *Installer) InstallOrUpgrade(chartName string) (*helmInstaller.VersionInfo, error) {
+	return helmInstaller.InstallOrUpgrade(serviceInstaller.Repository, serviceInstaller.getChartSpec(chartName))
 }
 
 func (serviceInstaller *Installer) Uninstall(chartName string) error {

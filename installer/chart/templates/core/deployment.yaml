@@ -19,6 +19,9 @@ spec:
           ports:
             - containerPort: {{ .Values.core.port }}
               name: core
+          env:
+            - name: REPOSITORY_TRACK
+              value: "{{ .Values.core.repositoryTrack }}"
           readinessProbe:
             httpGet:
               path: /health

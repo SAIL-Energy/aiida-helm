@@ -80,7 +80,7 @@ func GetVersionInfo(repository repo.Entry, chartSpec helm.ChartSpec) (*VersionIn
 	return versionInfo, err
 }
 
-func Install(repository repo.Entry, chartSpec helm.ChartSpec) (*VersionInfo, error) {
+func InstallOrUpgrade(repository repo.Entry, chartSpec helm.ChartSpec) (*VersionInfo, error) {
 	helmClient, err := getHelmClient(chartSpec.Namespace)
 	if err != nil {
 		return nil, err
@@ -93,28 +93,7 @@ func Install(repository repo.Entry, chartSpec helm.ChartSpec) (*VersionInfo, err
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 
-	chartRelease, err := helmClient.InstallChart(ctx, &chartSpec, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return buildVersionInfo(chartRelease), nil
-}
-
-func Upgrade(repository repo.Entry, chartSpec helm.ChartSpec) (*VersionInfo, error) {
-	helmClient, err := getHelmClient(chartSpec.Namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := addAndUpdateChartRepos(helmClient, repository); err != nil {
-		return nil, err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-	defer cancel()
-
-	chartRelease, err := helmClient.UpgradeChart(ctx, &chartSpec, nil)
+	chartRelease, err := helmClient.InstallOrUpgradeChart(ctx, &chartSpec, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -5,3 +5,4 @@ core:
   replicaCount: 1
   version: "latest"
   port: 8010
+  repositoryTrack: "stable"

@@ -14,6 +14,6 @@ func NewSuccessDataResponse(data interface{}) Response {
 	return Response{Success: true, Data: data}
 }
 
-func NewErrorResponse(error error) Response {
-	return Response{Success: false, Error: error.Error()}
+func NewErrorResponse(error string) Response {
+	return Response{Success: false, Error: error}
 }

@@ -14,17 +14,21 @@ import (
 )
 
 const secretNameSuffix = "secret"
+const tokenDeploymentName = "core"
+const tokenSecretKey = "encryptedInstallerToken"
 
-func EncryptSecrets(namespace string, controllerName string, releaseName string, secretsPath string, sealedSecretsPath string) error {
+func EncryptSecrets(namespace string, controllerName string, releaseName string, secretsPath string, sealedSecretsPath string) (*string, error) {
 	secrets, err := readFromYamlFile(secretsPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	pubKey, err := GetPublicKey(namespace, controllerName)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	var token *string
 
 	for deploymentName, deploymentSecrets := range secrets {
 		for secretKey, secretItem := range deploymentSecrets {
@@ -34,20 +38,24 @@ func EncryptSecrets(namespace string, controllerName string, releaseName string,
 				secretItem, err = password.Generate(32, 5, 5, false, false)
 
 				if err != nil {
-					return err
+					return nil, err
 				}
+			}
+
+			if deploymentName == tokenDeploymentName && secretKey == tokenSecretKey {
+				token = &secretItem
 			}
 
 			encryptedSecretItem, err := EncryptSecret(namespace, pubKey, secretName, secretItem)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			secrets[deploymentName][secretKey] = *encryptedSecretItem
 		}
 	}
 
-	return writeToYamlFile(sealedSecretsPath, secrets)
+	return token, writeToYamlFile(sealedSecretsPath, secrets)
 }
 
 func EncryptSecret(namespace string, pubKey *rsa.PublicKey, secretName string, secretItem string) (*string, error) {

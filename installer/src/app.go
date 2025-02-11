@@ -9,10 +9,14 @@ import (
 	"helm.sh/helm/v3/pkg/repo"
 	"log"
 	"net/http"
+	"os"
 )
 
-const repositoryUrl = "https://eddie-energy.github.io/aiida-helm/stable"
+const authScheme = "Basic"
+
+const repositoryUrl = "https://eddie-energy.github.io/aiida-helm/"
 const repositoryName = "aiida"
+const repositoryDefaultTrack = "stable"
 
 const pathAiida = "/aiida"
 const pathService = "/service"
@@ -26,10 +30,18 @@ type App struct {
 }
 
 func (app *App) Run(addr string) {
-	app.Router = mux.NewRouter()
+	repositoryTrack := os.Getenv("REPOSITORY_TRACK")
+	if repositoryTrack == "" {
+		repositoryTrack = repositoryDefaultTrack
+	}
+
+	router := mux.NewRouter()
+	router.Use(app.authMiddleware)
+
+	app.Router = router
 	app.Repository = repo.Entry{
 		Name:               repositoryName,
-		URL:                repositoryUrl,
+		URL:                repositoryUrl + repositoryTrack,
 		PassCredentialsAll: true,
 	}
 	app.AiidaInstaller = aiida.NewInstaller(app.Repository)
@@ -39,20 +51,31 @@ func (app *App) Run(addr string) {
 	log.Fatal(http.ListenAndServe(addr, app.Router))
 }
 
+func (app *App) authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		authHeader := request.Header.Get("Authorization")
+
+		if app.AiidaInstaller.Token != nil && authHeader != authScheme+" "+*app.AiidaInstaller.Token {
+			app.respondWithJSON(responseWriter, http.StatusUnauthorized, NewErrorResponse("unauthorized"))
+			return
+		}
+
+		next.ServeHTTP(responseWriter, request)
+	})
+}
+
 func (app *App) initializeRoutes() {
 	fullServicePath := fmt.Sprintf("%s/{%s:.*}", pathService, varChartName)
 
 	app.Router.HandleFunc("/health", app.getHealthCheck).Methods("GET")
 
 	app.Router.HandleFunc(pathAiida, app.getVersionInfoAiida).Methods("GET")
-	app.Router.HandleFunc(pathAiida, app.installAiida).Methods("POST")
-	app.Router.HandleFunc(pathAiida, app.upgradeAiida).Methods("PUT")
+	app.Router.HandleFunc(pathAiida, app.installOrUpgradeAiida).Methods("POST")
 	app.Router.HandleFunc(pathAiida, app.uninstallAiida).Methods("DELETE")
 
-	app.Router.HandleFunc(pathService, app.getsVersionInfosRepoServices).Methods("GET")
+	app.Router.HandleFunc(pathService, app.getVersionInfosRepoServices).Methods("GET")
 	app.Router.HandleFunc(fullServicePath, app.getVersionInfoService).Methods("GET")
-	app.Router.HandleFunc(fullServicePath, app.installService).Methods("POST")
-	app.Router.HandleFunc(fullServicePath, app.upgradeService).Methods("PUT")
+	app.Router.HandleFunc(fullServicePath, app.installOrUpgradeService).Methods("POST")
 	app.Router.HandleFunc(fullServicePath, app.uninstallService).Methods("DELETE")
 }
 
@@ -63,27 +86,17 @@ func (app *App) getHealthCheck(responseWriter http.ResponseWriter, _ *http.Reque
 func (app *App) getVersionInfoAiida(responseWriter http.ResponseWriter, _ *http.Request) {
 	versionInfo, err := app.AiidaInstaller.GetVersionInfo()
 	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
 		return
 	}
 
 	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
 }
 
-func (app *App) installAiida(responseWriter http.ResponseWriter, _ *http.Request) {
-	versionInfo, err := app.AiidaInstaller.Install()
+func (app *App) installOrUpgradeAiida(responseWriter http.ResponseWriter, _ *http.Request) {
+	versionInfo, err := app.AiidaInstaller.InstallOrUpgrade()
 	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
-		return
-	}
-
-	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
-}
-
-func (app *App) upgradeAiida(responseWriter http.ResponseWriter, _ *http.Request) {
-	versionInfo, err := app.AiidaInstaller.Upgrade()
-	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
 		return
 	}
 
@@ -92,17 +105,17 @@ func (app *App) upgradeAiida(responseWriter http.ResponseWriter, _ *http.Request
 
 func (app *App) uninstallAiida(responseWriter http.ResponseWriter, _ *http.Request) {
 	if err := app.AiidaInstaller.Uninstall(); err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
 		return
 	}
 
 	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessResponse())
 }
 
-func (app *App) getsVersionInfosRepoServices(responseWriter http.ResponseWriter, _ *http.Request) {
+func (app *App) getVersionInfosRepoServices(responseWriter http.ResponseWriter, _ *http.Request) {
 	versionInfos, err := app.ServicesInstaller.GetVersionInfosRepo()
 	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
 		return
 	}
 
@@ -114,31 +127,19 @@ func (app *App) getVersionInfoService(responseWriter http.ResponseWriter, reques
 
 	versionInfo, err := app.ServicesInstaller.GetVersionInfo(chartName)
 	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
 		return
 	}
 
 	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
 }
 
-func (app *App) installService(responseWriter http.ResponseWriter, request *http.Request) {
+func (app *App) installOrUpgradeService(responseWriter http.ResponseWriter, request *http.Request) {
 	chartName := mux.Vars(request)[varChartName]
 
-	versionInfo, err := app.ServicesInstaller.Install(chartName)
+	versionInfo, err := app.ServicesInstaller.InstallOrUpgrade(chartName)
 	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
-		return
-	}
-
-	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
-}
-
-func (app *App) upgradeService(responseWriter http.ResponseWriter, request *http.Request) {
-	chartName := mux.Vars(request)[varChartName]
-
-	versionInfo, err := app.ServicesInstaller.Upgrade(chartName)
-	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
 		return
 	}
 
@@ -149,7 +150,7 @@ func (app *App) uninstallService(responseWriter http.ResponseWriter, request *ht
 	chartName := mux.Vars(request)[varChartName]
 
 	if err := app.ServicesInstaller.Uninstall(chartName); err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
 		return
 	}
 

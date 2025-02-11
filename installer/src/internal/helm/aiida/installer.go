@@ -20,6 +20,7 @@ type Installer struct {
 	Repository       repo.Entry
 	ChartSpec        helm.ChartSpec
 	SecretsInstaller *secrets.Installer
+	Token            *string
 }
 
 func NewInstaller(repository repo.Entry) *Installer {
@@ -39,30 +40,18 @@ func (aiidaInstaller *Installer) GetVersionInfo() (*helmInstaller.VersionInfo, e
 	return helmInstaller.GetVersionInfo(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
 }
 
-func (aiidaInstaller *Installer) Install() (*helmInstaller.VersionInfo, error) {
-	if _, err := aiidaInstaller.SecretsInstaller.Install(); err != nil {
+func (aiidaInstaller *Installer) InstallOrUpgrade() (*helmInstaller.VersionInfo, error) {
+	if _, err := aiidaInstaller.SecretsInstaller.InstallOrUpgrade(); err != nil {
 		return nil, err
 	}
 
-	err := secrets.EncryptSecrets(namespace, secrets.ControllerName, chartName, secretsPath, sealedSecretsPath)
+	token, err := secrets.EncryptSecrets(namespace, secrets.ControllerName, chartName, secretsPath, sealedSecretsPath)
 	if err != nil {
 		return nil, err
 	}
 
-	return helmInstaller.Install(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
-}
-
-func (aiidaInstaller *Installer) Upgrade() (*helmInstaller.VersionInfo, error) {
-	if _, err := aiidaInstaller.SecretsInstaller.Upgrade(); err != nil {
-		return nil, err
-	}
-
-	err := secrets.EncryptSecrets(namespace, secrets.ControllerName, chartName, secretsPath, sealedSecretsPath)
-	if err != nil {
-		return nil, err
-	}
-
-	return helmInstaller.Upgrade(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
+	aiidaInstaller.Token = token
+	return helmInstaller.InstallOrUpgrade(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
 }
 
 func (aiidaInstaller *Installer) Uninstall() error {
