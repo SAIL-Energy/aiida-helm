@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
+	"github.com/awnumar/memguard"
 	ssv1alpha1 "github.com/bitnami-labs/sealed-secrets/pkg/apis/sealedsecrets/v1alpha1"
 	"github.com/bitnami-labs/sealed-secrets/pkg/kubeseal"
 	"github.com/sethvargo/go-password/password"
@@ -17,54 +18,83 @@ const secretNameSuffix = "secret"
 const tokenDeploymentName = "core"
 const tokenSecretKey = "encryptedInstallerToken"
 
-func EncryptSecrets(namespace string, controllerName string, releaseName string, secretsPath string, sealedSecretsPath string) (*string, error) {
-	secrets, err := readFromYamlFile(secretsPath)
+type Encryptor struct {
+	Namespace             string
+	ControllerName        string
+	ReleaseName           string
+	SecretsPath           string
+	SealedSecretsPath     string
+	InstallerTokenEnclave *memguard.Enclave
+}
+
+func NewEncryptor(
+	namespace string,
+	controllerName string,
+	releaseName string,
+	secretsPath string,
+	sealedSecretsPath string,
+) *Encryptor {
+	return &Encryptor{
+		Namespace:         namespace,
+		ControllerName:    controllerName,
+		ReleaseName:       releaseName,
+		SecretsPath:       secretsPath,
+		SealedSecretsPath: sealedSecretsPath,
+	}
+}
+
+func (encryptor *Encryptor) EncryptSecrets() error {
+	secrets, err := encryptor.readFromYamlFile(encryptor.SecretsPath)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	pubKey, err := GetPublicKey(namespace, controllerName)
+	pubKey, err := encryptor.GetPublicKey()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var token *string
+	var token string
 
 	for deploymentName, deploymentSecrets := range secrets {
 		for secretKey, secretItem := range deploymentSecrets {
-			secretName := fmt.Sprintf("%s-%s-%s", releaseName, deploymentName, secretNameSuffix)
+			secretName := fmt.Sprintf("%s-%s-%s", encryptor.ReleaseName, deploymentName, secretNameSuffix)
 
 			if secretItem == "" {
 				secretItem, err = password.Generate(32, 5, 5, false, false)
 
 				if err != nil {
-					return nil, err
+					return err
 				}
 			}
 
 			if deploymentName == tokenDeploymentName && secretKey == tokenSecretKey {
-				token = &secretItem
+				token = secretItem
 			}
 
-			encryptedSecretItem, err := EncryptSecret(namespace, pubKey, secretName, secretItem)
+			encryptedSecretItem, err := encryptor.EncryptSecret(pubKey, secretName, secretItem)
 			if err != nil {
-				return nil, err
+				return err
 			}
 
 			secrets[deploymentName][secretKey] = *encryptedSecretItem
 		}
 	}
 
-	return token, writeToYamlFile(sealedSecretsPath, secrets)
+	tokenBuffer := memguard.NewBufferFromBytes([]byte(token))
+	defer tokenBuffer.Destroy()
+	encryptor.InstallerTokenEnclave = tokenBuffer.Seal()
+
+	return encryptor.writeToYamlFile(encryptor.SealedSecretsPath, secrets)
 }
 
-func EncryptSecret(namespace string, pubKey *rsa.PublicKey, secretName string, secretItem string) (*string, error) {
+func (encryptor *Encryptor) EncryptSecret(pubKey *rsa.PublicKey, secretName string, secretItem string) (*string, error) {
 	encryptedSecretItemBuffer := new(bytes.Buffer)
 
 	err := kubeseal.EncryptSecretItem(
 		encryptedSecretItemBuffer,
 		secretName,
-		namespace,
+		encryptor.Namespace,
 		[]byte(secretItem),
 		ssv1alpha1.StrictScope,
 		pubKey,
@@ -77,14 +107,14 @@ func EncryptSecret(namespace string, pubKey *rsa.PublicKey, secretName string, s
 	return &encryptedSecretItem, nil
 }
 
-func GetPublicKey(namespace string, controllerName string) (*rsa.PublicKey, error) {
+func (encryptor *Encryptor) GetPublicKey() (*rsa.PublicKey, error) {
 	clientConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		clientcmd.NewDefaultClientConfigLoadingRules(),
 		&clientcmd.ConfigOverrides{},
 	)
 	ctx := context.Background()
 
-	certFile, err := kubeseal.OpenCert(ctx, clientConfig, namespace, controllerName, "")
+	certFile, err := kubeseal.OpenCert(ctx, clientConfig, encryptor.Namespace, encryptor.ControllerName, "")
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +127,7 @@ func GetPublicKey(namespace string, controllerName string) (*rsa.PublicKey, erro
 	return pubKey, nil
 }
 
-func readFromYamlFile(filePath string) (map[string]map[string]string, error) {
+func (encryptor *Encryptor) readFromYamlFile(filePath string) (map[string]map[string]string, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
@@ -112,7 +142,7 @@ func readFromYamlFile(filePath string) (map[string]map[string]string, error) {
 	return values, nil
 }
 
-func writeToYamlFile(filePath string, values map[string]map[string]string) error {
+func (encryptor *Encryptor) writeToYamlFile(filePath string, values map[string]map[string]string) error {
 	encryptedValues, err := yaml.Marshal(values)
 	if err != nil {
 		return err

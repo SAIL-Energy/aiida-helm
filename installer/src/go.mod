@@ -5,7 +5,10 @@ go 1.23.4
 toolchain go1.23.5
 
 require (
+	github.com/awnumar/memguard v0.22.5
 	github.com/bitnami-labs/sealed-secrets v0.28.0
+	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/gorilla/mux v1.8.1
 	github.com/mittwald/go-helm-client v0.12.16
 	github.com/sethvargo/go-password v0.3.1
 	gopkg.in/yaml.v3 v3.0.1
@@ -24,6 +27,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
+	github.com/awnumar/memcall v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -63,7 +67,6 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect

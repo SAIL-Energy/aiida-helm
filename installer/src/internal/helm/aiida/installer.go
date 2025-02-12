@@ -20,7 +20,7 @@ type Installer struct {
 	Repository       repo.Entry
 	ChartSpec        helm.ChartSpec
 	SecretsInstaller *secrets.Installer
-	Token            *string
+	Encryptor        *secrets.Encryptor
 }
 
 func NewInstaller(repository repo.Entry) *Installer {
@@ -33,6 +33,7 @@ func NewInstaller(repository repo.Entry) *Installer {
 		Repository:       repository,
 		ChartSpec:        helmInstaller.GetChartSpec(namespace, repository, chartName, valuesOptions, false),
 		SecretsInstaller: secrets.NewInstaller(namespace),
+		Encryptor:        secrets.NewEncryptor(namespace, secrets.ControllerName, chartName, secretsPath, sealedSecretsPath),
 	}
 }
 
@@ -45,12 +46,11 @@ func (aiidaInstaller *Installer) InstallOrUpgrade() (*helmInstaller.VersionInfo,
 		return nil, err
 	}
 
-	token, err := secrets.EncryptSecrets(namespace, secrets.ControllerName, chartName, secretsPath, sealedSecretsPath)
+	err := aiidaInstaller.Encryptor.EncryptSecrets()
 	if err != nil {
 		return nil, err
 	}
 
-	aiidaInstaller.Token = token
 	return helmInstaller.InstallOrUpgrade(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
 }
 
