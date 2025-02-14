@@ -25,7 +25,7 @@ const repositoryName = "aiida"
 const repositoryDefaultTrack = "stable"
 
 const pathAiida = "/aiida"
-const pathService = "/service"
+const pathService = "/services"
 const pathServiceUser = pathService + "/user"
 const varChartName = "chartName"
 

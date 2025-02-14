@@ -26,6 +26,15 @@ spec:
             httpGet:
               path: /health
               port: core
+          volumeMounts:
+            - name: aiida-configmap
+              mountPath: /src/configs/aiida-values.yaml
+              subPath: aiida-values.yaml
+
+      volumes:
+        - name: aiida-configmap
+          configMap:
+            name: {{ .Release.Name }}-aiida-configmap
 
       imagePullSecrets:
         - name: {{ .Values.ghcrImagePullSecrets.name }}

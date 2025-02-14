@@ -6,3 +6,5 @@ core:
   version: "latest"
   port: 8010
   repositoryTrack: "stable"
+
+aiida:

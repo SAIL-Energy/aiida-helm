@@ -1,51 +1,120 @@
-# AIIDA Helm
+# AIIDA Deployment
 
-This is the repository, that holds a helm chart for the deployment of AIIDA using K3s.
+This repository contains all the necessary resources to install/upgrade/delete AIIDA and its services on a Kubernetes cluster.
 
-## Tools
+## Repository Components
 
-Overview of the tools used in this repository:
+The repository includes the following components:
 
-| Tool           | Description                            |
-|----------------|----------------------------------------|
-| kubectl        | K8s command line tool                  |
-| K3s            | Lightweight K8s distribution           |
-| Helm           | K8s package manager                    |
-| Sealed Secrets | K8s secret management                  |
-| K9s            | optional for visualizing k8s resources |
-| yq             | YAML processor                         |
+- **Helm chart for AIIDA** – Defines the Kubernetes resources for AIIDA.
+- **Helm repository for AIIDA and its services** – Hosts and manages Helm charts.
+- **AIIDA Installer** – The tool to install AIIDA and its associated services.
 
-## Install AIIDA on Kubernetes Cluster
-Set Namespace as temporary variable in local environment:
+---
+
+## Helm Chart
+
+The **Helm chart** is located in the `chart/` directory and contains all required Kubernetes resources for deploying
+AIIDA Core.
+
+> **Note:**  
+> The chart is installed via the AIIDA Installer and is **not** meant to be installed manually.
+
+---
+
+## Helm Repository
+
+The **Helm repository** is located in the `repository/` directory and hosts AIIDA's Helm charts. The repository is:
+
+- Hosted on **GitHub Pages**.
+- Automatically updated when changes are pushed to the `main` branch.
+
+### Adding a New Chart/Version to the Repository
+
+To add a new version of the Helm chart, follow these steps:
+
+1. **Package the chart** by running the following command in the root of this repository:
+
+   ```bash
+   make package CHART_PATH=./chart TRACK=beta
+   ```
+   
+   - `CHART_PATH` defines the location of the chart (e.g., `installer` or `core`).
+   - `TRACK` specifies the release track:
+     - `stable` – For stable releases.
+     - `beta` – For beta releases.
+
+2. **Update the repository index** after packaging:
+
+   ```bash
+   make index TRACK=beta
+   ```
+
+   This updates the `index.yaml` file in the `repository/` directory.
+   The `TRACK` variable determines whether the chart is added to the `stable` or `beta` track.
+
+---
+
+## AIIDA Installer
+
+The **AIIDA Installer** simplifies the installation of AIIDA and its services on a Kubernetes cluster. Services are installed via a marketplace.
+
+### Installer Directory Structure
+
+- `chart/` – Contains the Helm chart for the installer.
+- `src/` – Contains the Golang source code for the installer.
+
+### Installation Steps
+
+To install AIIDA on a **K3s** cluster, follow these steps:
+
+1. Install **K3s** on the cluster.
+2. Install **kubectl** on the local machine.
+3. Set up a **GitHub Container Registry (GHCR)** token.
+4. Install **Helm**.
+5. Install the **AIIDA Installer** with Helm on the cluster.
+
+The `setup.bash` script is provided to automate the setup process on Linux.
+
+#### Running the Setup Script
+
+Before running the script, create a **GitHub Personal Access Token** with the `read:packages` scope.
+
+To execute the script, replace `YOUR_USERNAME` and `YOUR_PERSONAL_ACCESS_TOKEN` with your credentials, then run:
+
 ```bash
-export NAMESPACE=mynamespace
+./setup.bash --ghcr-username="YOUR_USERNAME" --ghcr-pat="YOUR_PERSONAL_ACCESS_TOKEN"
 ```
 
-Create initial values file:
-```bash
-touch chart/values-$NAMESPACE.yaml
-```
+### Customizing the Installation
 
-The `setup-arch.bash` script is designed to set up all the necessary tools for Arch. Before running the script, you need to create a personal access token in GitHub with the `read:packages` scope. The username should be your GitHub username.
+Like any Helm chart, the AIIDA installation can be customized by providing a `values.yaml` file.
 
-The script performs the following tasks:
+Customization options include:
 
-1. Installs the required tools.
-2. Creates sealed secrets for all usernames and passwords, including a sealed secret containing the personal access token. These sealed secrets are used for securely pulling the `aiida` image from the GitHub Container Registry and for other authentication purposes.
+1. **Installer Settings** – Modify parameters for the installer itself, such as the repository track.
+2. **AIIDA Core Settings** – Adjust AIIDA core configurations in the `aiida` section (e.g., change the port).
 
-To customize the configuration, copy the `.values-template.yaml` file and edit the values as needed.
+#### Example `values.yaml` Configuration:
 
-To execute the script, replace YOUR_USERNAME and YOUR_PERSONAL_ACCESS_TOKEN with your GitHub username and personal access token, then run the following command:
-```bash
-./setup-arch.bash --ghcr-username="YOUR_USERNAME" --ghcr-pat="YOUR_PERSONAL_ACCESS_TOKEN"
-```
-
-If you are planning to install multiple aiida instances on the same cluster, add this to your `values.yaml`:
 ```yaml
-sealed-secrets:
-  namespace: "hardening"
-  fullnameOverride: "sealed-secrets-controller-hardening"
-  rbac:
-    create: true
-    clusterRoleName: "hardening-secrets-unsealer"
+core:
+  repositoryTrack: "stable"
+
+aiida:
+  core:
+    port: 8888
 ```
+
+#### Applying Customizations
+
+To use a custom configuration, pass the `values.yaml` file using the `--values` flag when installing AIIDA:
+
+```bash
+helm install aiida-installer \
+  --namespace "$NAMESPACE" \
+  --values values.yaml \
+  aiida/aiida-installer
+```
+
+This ensures that AIIDA is deployed with the specified custom settings.
