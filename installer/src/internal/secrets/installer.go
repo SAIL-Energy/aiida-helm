@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"github.com/eddie-energy/aiida-helm/installer/internal/dto"
 	helmInstaller "github.com/eddie-energy/aiida-helm/installer/internal/helm"
 	helm "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
@@ -28,11 +29,11 @@ func NewInstaller(namespace string) *Installer {
 
 	return &Installer{
 		Repository: repository,
-		ChartSpec:  helmInstaller.GetChartSpec(namespace, repository, chartName, valuesOptions, true),
+		ChartSpec:  helmInstaller.GetChartSpec(namespace, repository, chartName, chartName, valuesOptions, true),
 	}
 }
 
-func (secretsInstaller *Installer) InstallOrUpgrade() (*helmInstaller.VersionInfo, error) {
+func (secretsInstaller *Installer) InstallOrUpgrade() (*dto.VersionInfoDto, error) {
 	return helmInstaller.InstallOrUpgrade(secretsInstaller.Repository, secretsInstaller.ChartSpec)
 }
 

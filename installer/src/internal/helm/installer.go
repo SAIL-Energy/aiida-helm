@@ -2,6 +2,7 @@ package helm
 
 import (
 	"context"
+	"github.com/eddie-energy/aiida-helm/installer/internal/dto"
 	helm "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/action"
@@ -9,26 +10,35 @@ import (
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
 	"log"
+	"strings"
 	"time"
 )
 
+const timeout = 30 * time.Minute
 const repositoryCache = "/tmp/.helmcache"
 const repositoryConfig = "/tmp/.helmrepo"
 
-func GetChartSpec(namespace string, repository repo.Entry, chartName string, valuesOptions values.Options, wait bool) helm.ChartSpec {
+func GetChartSpec(
+	namespace string,
+	repository repo.Entry,
+	releaseName string,
+	chartName string,
+	valuesOptions values.Options,
+	wait bool,
+) helm.ChartSpec {
 	return helm.ChartSpec{
-		ReleaseName:     chartName,
+		ReleaseName:     releaseName,
 		ChartName:       getFullChartName(repository.Name, chartName),
 		Namespace:       namespace,
 		CreateNamespace: true,
 		ValuesOptions:   valuesOptions,
 		SkipCRDs:        true,
 		Wait:            wait,
-		Timeout:         30 * time.Minute,
+		Timeout:         timeout,
 	}
 }
 
-func GetVersionInfosRepo(repository repo.Entry, namespace string) ([]*VersionInfo, error) {
+func GetVersionInfosRepo(repository repo.Entry, namespace string, releaseNameSuffix *string) ([]*dto.VersionInfoDto, error) {
 	helmClient, err := getHelmClient(namespace)
 	if err != nil {
 		return nil, err
@@ -43,23 +53,25 @@ func GetVersionInfosRepo(repository repo.Entry, namespace string) ([]*VersionInf
 		return nil, err
 	}
 
-	var versionInfos []*VersionInfo
+	var versionInfos []*dto.VersionInfoDto
 	for _, chartRelease := range chartReleases {
-		chartName := getFullChartName(repository.Name, chartRelease.Chart.Name())
+		if releaseNameSuffix == nil || strings.HasSuffix(chartRelease.Name, *releaseNameSuffix) {
+			chartName := getFullChartName(repository.Name, chartRelease.Chart.Name())
 
-		versionInfo := buildVersionInfo(chartRelease)
-		versionInfo.LatestChart, err = getLatestChartMetadata(helmClient, chartName)
-		if err != nil {
-			return nil, err
+			versionInfo := buildVersionInfoDto(chartRelease)
+			versionInfo.LatestChart, err = getLatestChartMetadata(helmClient, chartName)
+			if err != nil {
+				return nil, err
+			}
+
+			versionInfos = append(versionInfos, versionInfo)
 		}
-
-		versionInfos = append(versionInfos, versionInfo)
 	}
 
 	return versionInfos, nil
 }
 
-func GetVersionInfo(repository repo.Entry, chartSpec helm.ChartSpec) (*VersionInfo, error) {
+func GetVersionInfo(repository repo.Entry, chartSpec helm.ChartSpec) (*dto.VersionInfoDto, error) {
 	helmClient, err := getHelmClient(chartSpec.Namespace)
 	if err != nil {
 		return nil, err
@@ -74,13 +86,13 @@ func GetVersionInfo(repository repo.Entry, chartSpec helm.ChartSpec) (*VersionIn
 		return nil, err
 	}
 
-	versionInfo := buildVersionInfo(chartRelease)
+	versionInfo := buildVersionInfoDto(chartRelease)
 	versionInfo.LatestChart, err = getLatestChartMetadata(helmClient, chartSpec.ChartName)
 
 	return versionInfo, err
 }
 
-func InstallOrUpgrade(repository repo.Entry, chartSpec helm.ChartSpec) (*VersionInfo, error) {
+func InstallOrUpgrade(repository repo.Entry, chartSpec helm.ChartSpec) (*dto.VersionInfoDto, error) {
 	helmClient, err := getHelmClient(chartSpec.Namespace)
 	if err != nil {
 		return nil, err
@@ -90,7 +102,7 @@ func InstallOrUpgrade(repository repo.Entry, chartSpec helm.ChartSpec) (*Version
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	chartRelease, err := helmClient.InstallOrUpgradeChart(ctx, &chartSpec, nil)
@@ -98,7 +110,7 @@ func InstallOrUpgrade(repository repo.Entry, chartSpec helm.ChartSpec) (*Version
 		return nil, err
 	}
 
-	return buildVersionInfo(chartRelease), nil
+	return buildVersionInfoDto(chartRelease), nil
 }
 
 func Uninstall(chartSpec helm.ChartSpec) error {
@@ -131,8 +143,8 @@ func addAndUpdateChartRepos(helmClient helm.Client, repository repo.Entry) error
 	return helmClient.UpdateChartRepos()
 }
 
-func buildVersionInfo(release *release.Release) *VersionInfo {
-	return &VersionInfo{
+func buildVersionInfoDto(release *release.Release) *dto.VersionInfoDto {
+	return &dto.VersionInfoDto{
 		ReleaseName:    release.Name,
 		ReleaseInfo:    release.Info,
 		InstalledChart: release.Chart.Metadata,

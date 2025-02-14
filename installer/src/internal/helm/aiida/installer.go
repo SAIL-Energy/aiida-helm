@@ -1,6 +1,7 @@
 package aiida
 
 import (
+	"github.com/eddie-energy/aiida-helm/installer/internal/dto"
 	helmInstaller "github.com/eddie-energy/aiida-helm/installer/internal/helm"
 	"github.com/eddie-energy/aiida-helm/installer/internal/secrets"
 	helm "github.com/mittwald/go-helm-client"
@@ -31,17 +32,17 @@ func NewInstaller(repository repo.Entry) *Installer {
 
 	return &Installer{
 		Repository:       repository,
-		ChartSpec:        helmInstaller.GetChartSpec(namespace, repository, chartName, valuesOptions, false),
+		ChartSpec:        helmInstaller.GetChartSpec(namespace, repository, chartName, chartName, valuesOptions, false),
 		SecretsInstaller: secrets.NewInstaller(namespace),
 		Encryptor:        secrets.NewEncryptor(namespace, secrets.ControllerName, chartName, secretsPath, sealedSecretsPath),
 	}
 }
 
-func (aiidaInstaller *Installer) GetVersionInfo() (*helmInstaller.VersionInfo, error) {
+func (aiidaInstaller *Installer) GetVersionInfo() (*dto.VersionInfoDto, error) {
 	return helmInstaller.GetVersionInfo(aiidaInstaller.Repository, aiidaInstaller.ChartSpec)
 }
 
-func (aiidaInstaller *Installer) InstallOrUpgrade() (*helmInstaller.VersionInfo, error) {
+func (aiidaInstaller *Installer) InstallOrUpgrade() (*dto.VersionInfoDto, error) {
 	if _, err := aiidaInstaller.SecretsInstaller.InstallOrUpgrade(); err != nil {
 		return nil, err
 	}

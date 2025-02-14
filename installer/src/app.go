@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/awnumar/memguard"
+	"github.com/eddie-energy/aiida-helm/installer/internal/dto"
 	"github.com/eddie-energy/aiida-helm/installer/internal/helm/aiida"
 	"github.com/eddie-energy/aiida-helm/installer/internal/helm/services"
 	"github.com/golang-jwt/jwt/v5"
@@ -23,10 +26,14 @@ const repositoryDefaultTrack = "stable"
 
 const pathAiida = "/aiida"
 const pathService = "/service"
+const pathServiceUser = pathService + "/user"
 const varChartName = "chartName"
+
+const userIdKey = "userId"
 
 const bearerPrefix = "Bearer "
 const jwtIssuer = "aiida-installer.local"
+const jwtTokenLifetime = 30 * time.Minute
 
 type App struct {
 	Router            *mux.Router
@@ -75,33 +82,34 @@ func (app *App) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 		authHeader := request.Header.Get("Authorization")
 		if authHeader == "" {
-			app.respondWithJSON(responseWriter, http.StatusUnauthorized, NewErrorResponse("missing authorization header"))
+			app.respondWithJSON(responseWriter, http.StatusUnauthorized, dto.NewErrorResponseDto("missing authorization header"))
 			return
 		}
 
 		if !strings.HasPrefix(authHeader, bearerPrefix) {
-			app.respondWithJSON(responseWriter, http.StatusUnauthorized, NewErrorResponse("invalid authorization header"))
+			app.respondWithJSON(responseWriter, http.StatusUnauthorized, dto.NewErrorResponseDto("invalid authorization header"))
 			return
 		}
 
 		jwtTokenString := strings.TrimPrefix(authHeader, bearerPrefix)
 		if jwtTokenString == "" {
-			app.respondWithJSON(responseWriter, http.StatusUnauthorized, NewErrorResponse("missing jwt token"))
+			app.respondWithJSON(responseWriter, http.StatusUnauthorized, dto.NewErrorResponseDto("missing jwt token"))
 			return
 		}
 
-		err := app.verifyJwtToken(jwtTokenString)
+		userId, err := app.verifyJwtToken(jwtTokenString)
 		if err != nil {
-			app.respondWithJSON(responseWriter, http.StatusUnauthorized, NewErrorResponse(err.Error()))
+			app.respondWithJSON(responseWriter, http.StatusUnauthorized, dto.NewErrorResponseDto(err.Error()))
 			return
 		}
 
-		next.ServeHTTP(responseWriter, request)
+		ctx := context.WithValue(request.Context(), userIdKey, *userId)
+		next.ServeHTTP(responseWriter, request.WithContext(ctx))
 	})
 }
 
 func (app *App) initializeRoutes() {
-	fullServicePath := fmt.Sprintf("%s/{%s:.*}", pathService, varChartName)
+	fullServicePath := fmt.Sprintf("%s/{%s:.*}", pathServiceUser, varChartName)
 
 	app.Router.HandleFunc("/health", app.getHealthCheck).Methods("GET")
 	app.Router.HandleFunc("/login", app.login).Methods("POST")
@@ -110,107 +118,163 @@ func (app *App) initializeRoutes() {
 	app.SecureRouter.HandleFunc(pathAiida, app.installOrUpgradeAiida).Methods("POST")
 	app.SecureRouter.HandleFunc(pathAiida, app.uninstallAiida).Methods("DELETE")
 
-	app.SecureRouter.HandleFunc(pathService, app.getVersionInfosRepoServices).Methods("GET")
+	app.SecureRouter.HandleFunc(pathService, app.getVersionInfosRepoServicesAll).Methods("GET")
+	app.SecureRouter.HandleFunc(pathServiceUser, app.getVersionInfosRepoServices).Methods("GET")
 	app.SecureRouter.HandleFunc(fullServicePath, app.getVersionInfoService).Methods("GET")
 	app.SecureRouter.HandleFunc(fullServicePath, app.installOrUpgradeService).Methods("POST")
 	app.SecureRouter.HandleFunc(fullServicePath, app.uninstallService).Methods("DELETE")
 }
 
 func (app *App) getHealthCheck(responseWriter http.ResponseWriter, _ *http.Request) {
-	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessResponse())
+	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessResponseDto())
 }
 
 func (app *App) login(responseWriter http.ResponseWriter, request *http.Request) {
 	body, err := io.ReadAll(request.Body)
 	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
+	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(request.Body)
+
+	var loginDto dto.LoginDto
+	if err := json.Unmarshal(body, &loginDto); err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
 	}
 
-	err = app.verifyInstallerToken(string(body))
+	err = app.verifyInstallerToken(loginDto.InstallerToken)
 	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
 	}
 
-	jwtToken, err := app.createJwtToken()
+	jwtToken, err := app.createJwtToken(loginDto.UserId)
 	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, jwtToken)
+	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(jwtToken))
 }
 
 func (app *App) getVersionInfoAiida(responseWriter http.ResponseWriter, _ *http.Request) {
 	versionInfo, err := app.AiidaInstaller.GetVersionInfo()
 	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
+	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(versionInfo))
 }
 
 func (app *App) installOrUpgradeAiida(responseWriter http.ResponseWriter, _ *http.Request) {
 	versionInfo, err := app.AiidaInstaller.InstallOrUpgrade()
 	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
+	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(versionInfo))
 }
 
 func (app *App) uninstallAiida(responseWriter http.ResponseWriter, _ *http.Request) {
 	if err := app.AiidaInstaller.Uninstall(); err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessResponse())
+	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessResponseDto())
 }
 
-func (app *App) getVersionInfosRepoServices(responseWriter http.ResponseWriter, _ *http.Request) {
-	versionInfos, err := app.ServicesInstaller.GetVersionInfosRepo()
+func (app *App) getVersionInfosRepoServicesAll(responseWriter http.ResponseWriter, request *http.Request) {
+	versionInfos, err := app.ServicesInstaller.GetVersionInfosRepo(nil)
 	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfos))
+	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(versionInfos))
+}
+
+func (app *App) getVersionInfosRepoServices(responseWriter http.ResponseWriter, request *http.Request) {
+	userId, err := app.getUserIDFromContext(request)
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
+	}
+
+	versionInfos, err := app.ServicesInstaller.GetVersionInfosRepo(&userId)
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
+	}
+
+	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(versionInfos))
 }
 
 func (app *App) getVersionInfoService(responseWriter http.ResponseWriter, request *http.Request) {
 	chartName := mux.Vars(request)[varChartName]
+	if chartName == "" {
+		app.respondWithJSON(responseWriter, http.StatusBadRequest, dto.NewErrorResponseDto("missing chart name"))
+	}
 
-	versionInfo, err := app.ServicesInstaller.GetVersionInfo(chartName)
+	userId, err := app.getUserIDFromContext(request)
 	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
+	versionInfo, err := app.ServicesInstaller.GetVersionInfo(userId, chartName)
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
+	}
+
+	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(versionInfo))
 }
 
 func (app *App) installOrUpgradeService(responseWriter http.ResponseWriter, request *http.Request) {
 	chartName := mux.Vars(request)[varChartName]
+	if chartName == "" {
+		app.respondWithJSON(responseWriter, http.StatusBadRequest, dto.NewErrorResponseDto("missing chart name"))
+	}
 
-	versionInfo, err := app.ServicesInstaller.InstallOrUpgrade(chartName)
+	userId, err := app.getUserIDFromContext(request)
 	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessDataResponse(versionInfo))
+	versionInfo, err := app.ServicesInstaller.InstallOrUpgrade(userId, chartName)
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
+	}
+
+	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(versionInfo))
 }
 
 func (app *App) uninstallService(responseWriter http.ResponseWriter, request *http.Request) {
 	chartName := mux.Vars(request)[varChartName]
+	if chartName == "" {
+		app.respondWithJSON(responseWriter, http.StatusBadRequest, dto.NewErrorResponseDto("missing chart name"))
+	}
 
-	if err := app.ServicesInstaller.Uninstall(chartName); err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, NewErrorResponse(err.Error()))
+	userId, err := app.getUserIDFromContext(request)
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
 		return
 	}
 
-	app.respondWithJSON(responseWriter, http.StatusOK, NewSuccessResponse())
+	if err := app.ServicesInstaller.Uninstall(userId, chartName); err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
+	}
+
+	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessResponseDto())
 }
 
 func (app *App) respondWithJSON(responseWriter http.ResponseWriter, code int, response interface{}) {
@@ -222,7 +286,7 @@ func (app *App) respondWithJSON(responseWriter http.ResponseWriter, code int, re
 	_, _ = responseWriter.Write(responseJson)
 }
 
-func (app *App) createJwtToken() (string, error) {
+func (app *App) createJwtToken(userId string) (string, error) {
 	jwtKeyBuffer, err := app.JwtKeyEnclave.Open()
 	if err != nil {
 		return "", err
@@ -233,17 +297,18 @@ func (app *App) createJwtToken() (string, error) {
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"iss": jwtIssuer,
-			"exp": now.Add(time.Minute * 30).Unix(),
+			"exp": now.Add(jwtTokenLifetime).Unix(),
 			"iat": now.Unix(),
+			"sub": userId,
 		},
 	)
 	return jwtToken.SignedString(jwtKeyBuffer.Bytes())
 }
 
-func (app *App) verifyJwtToken(tokenString string) error {
+func (app *App) verifyJwtToken(tokenString string) (*string, error) {
 	jwtKeyBuffer, err := app.JwtKeyEnclave.Open()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer jwtKeyBuffer.Destroy()
 
@@ -257,14 +322,19 @@ func (app *App) verifyJwtToken(tokenString string) error {
 		jwt.WithIssuedAt(),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !token.Valid {
-		return fmt.Errorf("invalid jwt token")
+		return nil, errors.New("invalid jwt token")
 	}
 
-	return nil
+	userId, err := token.Claims.GetSubject()
+	if err != nil {
+		return nil, err
+	}
+
+	return &userId, nil
 }
 
 func (app *App) verifyInstallerToken(token string) error {
@@ -275,8 +345,16 @@ func (app *App) verifyInstallerToken(token string) error {
 	defer tokenBuffer.Destroy()
 
 	if tokenBuffer.String() != token {
-		return fmt.Errorf("invalid installer token")
+		return errors.New("invalid installer token")
 	}
 
 	return nil
+}
+
+func (app *App) getUserIDFromContext(request *http.Request) (string, error) {
+	userId, ok := request.Context().Value(userIdKey).(string)
+	if !ok {
+		return "", errors.New("user ID not found in context")
+	}
+	return userId, nil
 }

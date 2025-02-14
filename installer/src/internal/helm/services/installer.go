@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/eddie-energy/aiida-helm/installer/internal/dto"
 	helmInstaller "github.com/eddie-energy/aiida-helm/installer/internal/helm"
 	helm "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
@@ -17,24 +18,25 @@ func NewInstaller(repository repo.Entry) *Installer {
 	return &Installer{Repository: repository}
 }
 
-func (serviceInstaller *Installer) GetVersionInfosRepo() ([]*helmInstaller.VersionInfo, error) {
-	return helmInstaller.GetVersionInfosRepo(serviceInstaller.Repository, namespace)
+func (serviceInstaller *Installer) GetVersionInfosRepo(userId *string) ([]*dto.VersionInfoDto, error) {
+	return helmInstaller.GetVersionInfosRepo(serviceInstaller.Repository, namespace, userId)
 }
 
-func (serviceInstaller *Installer) GetVersionInfo(chartName string) (*helmInstaller.VersionInfo, error) {
-	chartSpec := serviceInstaller.getChartSpec(chartName)
+func (serviceInstaller *Installer) GetVersionInfo(userId string, chartName string) (*dto.VersionInfoDto, error) {
+	chartSpec := serviceInstaller.getChartSpec(userId, chartName)
 
 	return helmInstaller.GetVersionInfo(serviceInstaller.Repository, chartSpec)
 }
 
-func (serviceInstaller *Installer) InstallOrUpgrade(chartName string) (*helmInstaller.VersionInfo, error) {
-	return helmInstaller.InstallOrUpgrade(serviceInstaller.Repository, serviceInstaller.getChartSpec(chartName))
+func (serviceInstaller *Installer) InstallOrUpgrade(userId string, chartName string) (*dto.VersionInfoDto, error) {
+	return helmInstaller.InstallOrUpgrade(serviceInstaller.Repository, serviceInstaller.getChartSpec(userId, chartName))
 }
 
-func (serviceInstaller *Installer) Uninstall(chartName string) error {
-	return helmInstaller.Uninstall(serviceInstaller.getChartSpec(chartName))
+func (serviceInstaller *Installer) Uninstall(userId string, chartName string) error {
+	return helmInstaller.Uninstall(serviceInstaller.getChartSpec(userId, chartName))
 }
 
-func (serviceInstaller *Installer) getChartSpec(chartName string) helm.ChartSpec {
-	return helmInstaller.GetChartSpec(namespace, serviceInstaller.Repository, chartName, values.Options{}, false)
+func (serviceInstaller *Installer) getChartSpec(userId string, chartName string) helm.ChartSpec {
+	releaseName := chartName + "-" + userId
+	return helmInstaller.GetChartSpec(namespace, serviceInstaller.Repository, releaseName, chartName, values.Options{}, false)
 }
