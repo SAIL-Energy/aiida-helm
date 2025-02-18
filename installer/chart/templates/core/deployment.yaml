@@ -27,14 +27,17 @@ spec:
               path: /health
               port: core
           volumeMounts:
-            - name: aiida-configmap
+            - name: configmap
               mountPath: /src/configs/aiida-values.yaml
               subPath: aiida-values.yaml
+            - name: configmap
+              mountPath: /src/configs/secrets-template.yaml
+              subPath: secrets-template.yaml
 
       volumes:
-        - name: aiida-configmap
+        - name: configmap
           configMap:
-            name: {{ .Release.Name }}-aiida-configmap
+            name: {{ .Release.Name }}-configmap
 
       imagePullSecrets:
         - name: {{ .Values.ghcrImagePullSecrets.name }}

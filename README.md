@@ -94,6 +94,7 @@ Customization options include:
 
 1. **Installer Settings** – Modify parameters for the installer itself, such as the repository track.
 2. **AIIDA Core Settings** – Adjust AIIDA core configurations in the `aiida` section (e.g., change the port).
+3. **Secrets** – Add secrets to the `secrets` section (e.g., add a password for the NanoMQ service). Otherwise, the secrets will be generated automatically.
 
 #### Example `values.yaml` Configuration:
 
@@ -104,6 +105,10 @@ core:
 aiida:
   core:
     port: 8888
+
+secrets:
+  nanomq:
+    encryptedPwd: "admin: supersafe"
 ```
 
 #### Applying Customizations

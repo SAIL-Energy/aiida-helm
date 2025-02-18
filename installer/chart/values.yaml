@@ -8,3 +8,18 @@ core:
   repositoryTrack: "stable"
 
 aiida:
+
+secrets:
+  core:
+    encryptedInstallerToken: ""
+  timescaledb:
+    encryptedUsername: ""
+    encryptedPassword: ""
+  nanomq:
+    encryptedPwd: ""
+  teleinfo2mqtt:
+    encryptedMqttUsername: ""
+    encryptedMqttPassword: ""
+  keycloak:
+    encryptedAdminUsername: ""
+    encryptedAdminPassword: ""

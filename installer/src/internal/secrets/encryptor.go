@@ -15,8 +15,13 @@ import (
 )
 
 const secretNameSuffix = "secret"
+
 const tokenDeploymentName = "core"
 const tokenSecretKey = "encryptedInstallerToken"
+
+const nanomqUsername = "admin"
+const nanomqDeploymentName = "nanomq"
+const nanomqSecretKey = "encryptedPwd"
 
 type Encryptor struct {
 	Namespace             string
@@ -70,6 +75,8 @@ func (encryptor *Encryptor) EncryptSecrets() error {
 
 			if deploymentName == tokenDeploymentName && secretKey == tokenSecretKey {
 				token = secretItem
+			} else if deploymentName == nanomqDeploymentName && secretKey == nanomqSecretKey {
+				secretItem = fmt.Sprintf("%s:%s", nanomqUsername, secretItem)
 			}
 
 			encryptedSecretItem, err := encryptor.EncryptSecret(pubKey, secretName, secretItem)
