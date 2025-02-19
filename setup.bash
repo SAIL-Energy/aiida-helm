@@ -6,7 +6,10 @@ GHCR_PAT_ARG="--ghcr-pat"
 GHCR_PAT=""
 TRACK_ARG="--track"
 TRACK=${TRACK:-"stable"}
-NAMESPACE="aiida"
+VALUES_ARG="--values"
+VALUES=""
+
+NAMESPACE="hardening"
 
 display_help () {
   echo -e "This script installs the required tools to deploy AIIDA on a k3s cluster."
@@ -17,6 +20,7 @@ display_help () {
   echo -e "  --ghcr-username=<username>\tThe GitHub Container Registry username."
   echo -e "  --ghcr-pat=<pat>\t\tThe GitHub Container Registry Personal Access Token."
   echo -e "  --track=<track>\t\tThe track to install. Default is 'stable'."
+  echo -e "  --values=<values>\t\tThe values file to use for the installation. Default is none."
 }
 
 for arg in "$@"; do
@@ -41,10 +45,10 @@ for arg in "$@"; do
   esac
 done
 
-#if [ -z "$GHCR_USERNAME" ] || [ -z "$GHCR_PAT" ]; then
-#  echo "Missing argument(s): $GHCR_USERNAME_ARG or $GHCR_PAT_ARG"
-#  exit 1
-#fi
+if [ -z "$GHCR_USERNAME" ] || [ -z "$GHCR_PAT" ]; then
+  echo "Missing argument(s): $GHCR_USERNAME_ARG or $GHCR_PAT_ARG"
+  exit 1
+fi
 
 ### INSTALL K3S
 curl -sfL https://get.k3s.io | sh -
@@ -85,4 +89,5 @@ helm repo add aiida "https://eddie-energy.github.io/aiida-helm/$TRACK" --force-u
 
 helm install aiida-installer \
   --namespace "$NAMESPACE" \
+  --values "$VALUES" \
   aiida/aiida-installer

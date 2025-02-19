@@ -4,6 +4,7 @@ metadata:
   name: {{ .Release.Name }}-nanomq
   {{- include "aiida.nanomq.labels" . | indent 2 }}
 spec:
+  type: LoadBalancer
   selector:
     app: {{ .Release.Name }}-nanomq
   ports:
