@@ -16,12 +16,10 @@ import (
 
 const secretNameSuffix = "secret"
 
+const secretTemplateAny = "*"
+
 const tokenDeploymentName = "core"
 const tokenSecretKey = "encryptedInstallerToken"
-
-const nanomqUsername = "admin"
-const nanomqDeploymentName = "nanomq"
-const nanomqSecretKey = "encryptedPwd"
 
 type Encryptor struct {
 	Namespace             string
@@ -65,7 +63,7 @@ func (encryptor *Encryptor) EncryptSecrets() error {
 		for secretKey, secretItem := range deploymentSecrets {
 			secretName := fmt.Sprintf("%s-%s-%s", encryptor.ReleaseName, deploymentName, secretNameSuffix)
 
-			if secretItem == "" {
+			if secretItem == secretTemplateAny {
 				secretItem, err = password.Generate(32, 5, 5, false, false)
 
 				if err != nil {
@@ -75,8 +73,6 @@ func (encryptor *Encryptor) EncryptSecrets() error {
 
 			if deploymentName == tokenDeploymentName && secretKey == tokenSecretKey {
 				token = secretItem
-			} else if deploymentName == nanomqDeploymentName && secretKey == nanomqSecretKey {
-				secretItem = fmt.Sprintf("%s:%s", nanomqUsername, secretItem)
 			}
 
 			encryptedSecretItem, err := encryptor.EncryptSecret(pubKey, secretName, secretItem)
