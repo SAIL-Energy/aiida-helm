@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+const MaxReleaseNameLength = 53
+
 const timeout = 30 * time.Minute
 const repositoryCache = "/tmp/.helmcache"
 const repositoryConfig = "/tmp/.helmrepo"
@@ -38,7 +40,9 @@ func GetChartSpec(
 	}
 }
 
-func GetVersionInfosRepo(repository repo.Entry, namespace string, releaseNameSuffix *string) ([]*dto.VersionInfoDto, error) {
+func GetVersionInfosRepo(repository repo.Entry, namespace string, chartName *string, releaseNameSuffix *string) ([]*dto.VersionInfoDto, error) {
+	log.Printf("Getting version infos for repository %s in namespace %s", repository.Name, namespace)
+
 	helmClient, err := getHelmClient(namespace)
 	if err != nil {
 		return nil, err
@@ -53,18 +57,20 @@ func GetVersionInfosRepo(repository repo.Entry, namespace string, releaseNameSuf
 		return nil, err
 	}
 
-	var versionInfos []*dto.VersionInfoDto
+	versionInfos := make([]*dto.VersionInfoDto, 0)
 	for _, chartRelease := range chartReleases {
-		if releaseNameSuffix == nil || strings.HasSuffix(chartRelease.Name, *releaseNameSuffix) {
-			chartName := getFullChartName(repository.Name, chartRelease.Chart.Name())
+		if chartName == nil || chartRelease.Chart.Name() == *chartName {
+			if releaseNameSuffix == nil || strings.HasSuffix(chartRelease.Name, *releaseNameSuffix) {
+				chartName := getFullChartName(repository.Name, chartRelease.Chart.Name())
 
-			versionInfo := buildVersionInfoDto(chartRelease)
-			versionInfo.LatestChart, err = getLatestChartMetadata(helmClient, chartName)
-			if err != nil {
-				return nil, err
+				versionInfo := buildVersionInfoDto(chartRelease)
+				versionInfo.LatestChart, err = getLatestChartMetadata(helmClient, chartName)
+				if err != nil {
+					return nil, err
+				}
+
+				versionInfos = append(versionInfos, versionInfo)
 			}
-
-			versionInfos = append(versionInfos, versionInfo)
 		}
 	}
 
@@ -72,6 +78,8 @@ func GetVersionInfosRepo(repository repo.Entry, namespace string, releaseNameSuf
 }
 
 func GetVersionInfo(repository repo.Entry, chartSpec helm.ChartSpec) (*dto.VersionInfoDto, error) {
+	log.Printf("Getting version info for chart %s in namespace %s", chartSpec.ChartName, chartSpec.Namespace)
+
 	helmClient, err := getHelmClient(chartSpec.Namespace)
 	if err != nil {
 		return nil, err
@@ -93,6 +101,8 @@ func GetVersionInfo(repository repo.Entry, chartSpec helm.ChartSpec) (*dto.Versi
 }
 
 func InstallOrUpgrade(repository repo.Entry, chartSpec helm.ChartSpec) (*dto.VersionInfoDto, error) {
+	log.Printf("Installing or upgrading chart %s in namespace %s", chartSpec.ChartName, chartSpec.Namespace)
+
 	helmClient, err := getHelmClient(chartSpec.Namespace)
 	if err != nil {
 		return nil, err
@@ -114,6 +124,8 @@ func InstallOrUpgrade(repository repo.Entry, chartSpec helm.ChartSpec) (*dto.Ver
 }
 
 func Uninstall(chartSpec helm.ChartSpec) error {
+	log.Printf("Uninstalling chart %s in namespace %s", chartSpec.ChartName, chartSpec.Namespace)
+
 	helmClient, err := getHelmClient(chartSpec.Namespace)
 	if err != nil {
 		return err

@@ -1,9 +1,9 @@
 package services
 
 import (
+	"fmt"
 	"github.com/eddie-energy/aiida-helm/installer/internal/dto"
 	helmInstaller "github.com/eddie-energy/aiida-helm/installer/internal/helm"
-	"github.com/google/uuid"
 	helm "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/repo"
@@ -19,8 +19,8 @@ func NewInstaller(repository repo.Entry) *Installer {
 	return &Installer{Repository: repository}
 }
 
-func (serviceInstaller *Installer) GetVersionInfosRepo(userId *string) ([]*dto.VersionInfoDto, error) {
-	return helmInstaller.GetVersionInfosRepo(serviceInstaller.Repository, namespace, userId)
+func (serviceInstaller *Installer) GetVersionInfosRepo(userId *string, chartName *string) ([]*dto.VersionInfoDto, error) {
+	return helmInstaller.GetVersionInfosRepo(serviceInstaller.Repository, namespace, chartName, userId)
 }
 
 func (serviceInstaller *Installer) GetVersionInfo(chartName string, releaseName string) (*dto.VersionInfoDto, error) {
@@ -28,12 +28,13 @@ func (serviceInstaller *Installer) GetVersionInfo(chartName string, releaseName 
 }
 
 func (serviceInstaller *Installer) InstallNew(userId string, chartName string) (*dto.VersionInfoDto, error) {
-	releaseId, err := uuid.NewUUID()
+	versionInfos, err := serviceInstaller.GetVersionInfosRepo(&userId, &chartName)
 	if err != nil {
 		return nil, err
 	}
 
-	releaseName := chartName + "-" + releaseId.String() + "-" + userId
+	releaseName := generateReleaseName(userId, chartName, len(versionInfos))
+
 	return helmInstaller.InstallOrUpgrade(serviceInstaller.Repository, serviceInstaller.getChartSpec(chartName, releaseName))
 }
 
@@ -47,4 +48,15 @@ func (serviceInstaller *Installer) Uninstall(chartName string, releaseName strin
 
 func (serviceInstaller *Installer) getChartSpec(chartName string, releaseName string) helm.ChartSpec {
 	return helmInstaller.GetChartSpec(namespace, serviceInstaller.Repository, releaseName, chartName, values.Options{}, false)
+}
+
+func generateReleaseName(userId string, chartName string, versionsCount int) string {
+	releaseId := fmt.Sprintf("%d-%s", versionsCount+1, userId)
+
+	maxChartNameLength := helmInstaller.MaxReleaseNameLength - len(releaseId) - 1
+	if len(chartName) > maxChartNameLength {
+		chartName = chartName[:maxChartNameLength]
+	}
+
+	return fmt.Sprintf("%s-%s", chartName, releaseId)
 }

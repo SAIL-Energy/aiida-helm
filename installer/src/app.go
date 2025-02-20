@@ -81,6 +81,8 @@ func (app *App) Run(addr string) {
 
 func (app *App) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		log.Printf("Authenticating request %s %s", request.Method, request.URL.Path)
+
 		authHeader := request.Header.Get("Authorization")
 		if authHeader == "" {
 			app.respondWithJSON(responseWriter, http.StatusUnauthorized, dto.NewErrorResponseDto("missing authorization header"))
@@ -116,12 +118,13 @@ func (app *App) initializeRoutes() {
 	app.Router.HandleFunc("/health", app.getHealthCheck).Methods("GET")
 	app.Router.HandleFunc("/login", app.login).Methods("POST")
 
-	app.SecureRouter.HandleFunc(pathAiida, app.getVersionInfoAiida).Methods("GET")
+	app.SecureRouter.HandleFunc(pathAiida, app.getAiidaVersion).Methods("GET")
 	app.SecureRouter.HandleFunc(pathAiida, app.installOrUpgradeAiida).Methods("POST")
 	app.SecureRouter.HandleFunc(pathAiida, app.uninstallAiida).Methods("DELETE")
 
-	app.SecureRouter.HandleFunc(pathServices, app.getVersionInfosRepoServicesAll).Methods("GET")
-	app.SecureRouter.HandleFunc(pathServicesUser, app.getVersionInfosRepoServices).Methods("GET")
+	app.SecureRouter.HandleFunc(pathServices, app.getServicesVersionsAll).Methods("GET")
+	app.SecureRouter.HandleFunc(pathServicesUser, app.getServicesVersionsUser).Methods("GET")
+	app.SecureRouter.HandleFunc(pathServicesUserChart, app.getServicesVersionsChart).Methods("GET")
 	app.SecureRouter.HandleFunc(pathServicesUserChart, app.installNewService).Methods("POST")
 	app.SecureRouter.HandleFunc(pathServicesUserRelease, app.getVersionInfoService).Methods("GET")
 	app.SecureRouter.HandleFunc(pathServicesUserRelease, app.installOrUpgradeService).Methods("POST")
@@ -129,10 +132,14 @@ func (app *App) initializeRoutes() {
 }
 
 func (app *App) getHealthCheck(responseWriter http.ResponseWriter, _ *http.Request) {
+	log.Println("Health check")
+
 	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessResponseDto())
 }
 
 func (app *App) login(responseWriter http.ResponseWriter, request *http.Request) {
+	log.Println("Login")
+
 	body, err := io.ReadAll(request.Body)
 	if err != nil {
 		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
@@ -163,7 +170,9 @@ func (app *App) login(responseWriter http.ResponseWriter, request *http.Request)
 	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(jwtToken))
 }
 
-func (app *App) getVersionInfoAiida(responseWriter http.ResponseWriter, _ *http.Request) {
+func (app *App) getAiidaVersion(responseWriter http.ResponseWriter, _ *http.Request) {
+	log.Println("Get version info of AIIDA")
+
 	versionInfo, err := app.AiidaInstaller.GetVersionInfo()
 	if err != nil {
 		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
@@ -174,6 +183,8 @@ func (app *App) getVersionInfoAiida(responseWriter http.ResponseWriter, _ *http.
 }
 
 func (app *App) installOrUpgradeAiida(responseWriter http.ResponseWriter, _ *http.Request) {
+	log.Println("Install or upgrade AIIDA")
+
 	versionInfo, err := app.AiidaInstaller.InstallOrUpgrade()
 	if err != nil {
 		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
@@ -184,6 +195,8 @@ func (app *App) installOrUpgradeAiida(responseWriter http.ResponseWriter, _ *htt
 }
 
 func (app *App) uninstallAiida(responseWriter http.ResponseWriter, _ *http.Request) {
+	log.Println("Uninstall AIIDA")
+
 	if err := app.AiidaInstaller.Uninstall(); err != nil {
 		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
 		return
@@ -192,8 +205,10 @@ func (app *App) uninstallAiida(responseWriter http.ResponseWriter, _ *http.Reque
 	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessResponseDto())
 }
 
-func (app *App) getVersionInfosRepoServicesAll(responseWriter http.ResponseWriter, _ *http.Request) {
-	versionInfos, err := app.ServicesInstaller.GetVersionInfosRepo(nil)
+func (app *App) getServicesVersionsAll(responseWriter http.ResponseWriter, _ *http.Request) {
+	log.Println("Get version info of all services")
+
+	versionInfos, err := app.ServicesInstaller.GetVersionInfosRepo(nil, nil)
 	if err != nil {
 		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
 		return
@@ -202,14 +217,16 @@ func (app *App) getVersionInfosRepoServicesAll(responseWriter http.ResponseWrite
 	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(versionInfos))
 }
 
-func (app *App) getVersionInfosRepoServices(responseWriter http.ResponseWriter, request *http.Request) {
+func (app *App) getServicesVersionsUser(responseWriter http.ResponseWriter, request *http.Request) {
+	log.Println("Get version info of all services for user")
+
 	userId, err := app.getUserIDFromContext(request)
 	if err != nil {
 		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
 		return
 	}
 
-	versionInfos, err := app.ServicesInstaller.GetVersionInfosRepo(&userId)
+	versionInfos, err := app.ServicesInstaller.GetVersionInfosRepo(&userId, nil)
 	if err != nil {
 		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
 		return
@@ -218,7 +235,57 @@ func (app *App) getVersionInfosRepoServices(responseWriter http.ResponseWriter, 
 	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(versionInfos))
 }
 
+func (app *App) getServicesVersionsChart(responseWriter http.ResponseWriter, request *http.Request) {
+	log.Println("Get version info of services for a chart name")
+
+	chartName := mux.Vars(request)[varChartName]
+	if chartName == "" {
+		app.respondWithJSON(responseWriter, http.StatusBadRequest, dto.NewErrorResponseDto("missing chart name"))
+		return
+	}
+
+	userId, err := app.getUserIDFromContext(request)
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
+	}
+
+	versionInfos, err := app.ServicesInstaller.GetVersionInfosRepo(&userId, &chartName)
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
+	}
+
+	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(versionInfos))
+}
+
+func (app *App) installNewService(responseWriter http.ResponseWriter, request *http.Request) {
+	log.Println("Install new service")
+
+	chartName := mux.Vars(request)[varChartName]
+	if chartName == "" {
+		app.respondWithJSON(responseWriter, http.StatusBadRequest, dto.NewErrorResponseDto("missing chart name"))
+		return
+	}
+
+	userId, err := app.getUserIDFromContext(request)
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
+	}
+
+	versionInfo, err := app.ServicesInstaller.InstallNew(userId, chartName)
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
+	}
+
+	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(versionInfo))
+}
+
 func (app *App) getVersionInfoService(responseWriter http.ResponseWriter, request *http.Request) {
+	log.Println("Get version info service")
+
 	chartName, releaseName, err := app.getChartAndReleaseName(request)
 	if err != nil {
 		app.respondWithJSON(responseWriter, http.StatusBadRequest, dto.NewErrorResponseDto(err.Error()))
@@ -245,29 +312,9 @@ func (app *App) getVersionInfoService(responseWriter http.ResponseWriter, reques
 	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(versionInfo))
 }
 
-func (app *App) installNewService(responseWriter http.ResponseWriter, request *http.Request) {
-	chartName := mux.Vars(request)[varChartName]
-	if chartName == "" {
-		app.respondWithJSON(responseWriter, http.StatusBadRequest, dto.NewErrorResponseDto("missing chart name"))
-		return
-	}
-
-	userId, err := app.getUserIDFromContext(request)
-	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
-		return
-	}
-
-	versionInfo, err := app.ServicesInstaller.InstallNew(userId, chartName)
-	if err != nil {
-		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
-		return
-	}
-
-	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessDataResponseDto(versionInfo))
-}
-
 func (app *App) installOrUpgradeService(responseWriter http.ResponseWriter, request *http.Request) {
+	log.Println("Install or upgrade service")
+
 	chartName, releaseName, err := app.getChartAndReleaseName(request)
 	if err != nil {
 		app.respondWithJSON(responseWriter, http.StatusBadRequest, dto.NewErrorResponseDto(err.Error()))
@@ -295,6 +342,8 @@ func (app *App) installOrUpgradeService(responseWriter http.ResponseWriter, requ
 }
 
 func (app *App) uninstallService(responseWriter http.ResponseWriter, request *http.Request) {
+	log.Println("Uninstall service")
+
 	chartName, releaseName, err := app.getChartAndReleaseName(request)
 	if err != nil {
 		app.respondWithJSON(responseWriter, http.StatusBadRequest, dto.NewErrorResponseDto(err.Error()))
@@ -321,6 +370,8 @@ func (app *App) uninstallService(responseWriter http.ResponseWriter, request *ht
 }
 
 func (app *App) respondWithJSON(responseWriter http.ResponseWriter, code int, response dto.ResponseDto) {
+	log.Printf("Responding with code %d with success %t and error %s", code, response.Success, response.Error)
+
 	responseJson, _ := json.Marshal(response)
 
 	responseWriter.Header().Set("Content-Type", "application/json")
