@@ -1,6 +1,6 @@
 package dto
 
 type LoginDto struct {
-	UserId         string `json:"user_id,omitempty"`
-	InstallerToken string `json:"installer_token,omitempty"`
+	UserId         string `json:"userId,omitempty"`
+	InstallerToken string `json:"installerToken,omitempty"`
 }
