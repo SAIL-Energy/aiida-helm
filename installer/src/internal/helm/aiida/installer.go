@@ -11,7 +11,7 @@ import (
 )
 
 const chartName = "aiida"
-const namespace = "hardening"
+const namespace = "aiida"
 
 const secretsPath = "configs/secrets-template.yaml"
 const sealedSecretsPath = "configs/secrets.yaml"

@@ -9,7 +9,7 @@ TRACK=${TRACK:-"stable"}
 VALUES_ARG="--values"
 VALUES=""
 
-NAMESPACE="hardening"
+NAMESPACE="aiida"
 
 display_help () {
   echo -e "This script installs the required tools to deploy AIIDA on a k3s cluster."
