@@ -6,8 +6,6 @@ import (
 	helm "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
 	"log"
 	"strings"
@@ -63,7 +61,7 @@ func GetVersionInfosRepo(repository repo.Entry, namespace string, chartName *str
 			if releaseNameSuffix == nil || strings.HasSuffix(chartRelease.Name, *releaseNameSuffix) {
 				chartName := getFullChartName(repository.Name, chartRelease.Chart.Name())
 
-				versionInfo := buildVersionInfoDto(chartRelease)
+				versionInfo := dto.NewVersionInfoDtoFromHelmRelease(chartRelease)
 				versionInfo.LatestChart, err = getLatestChartMetadata(helmClient, chartName)
 				if err != nil {
 					return nil, err
@@ -94,7 +92,7 @@ func GetVersionInfo(repository repo.Entry, chartSpec helm.ChartSpec) (*dto.Versi
 		return nil, err
 	}
 
-	versionInfo := buildVersionInfoDto(chartRelease)
+	versionInfo := dto.NewVersionInfoDtoFromHelmRelease(chartRelease)
 	versionInfo.LatestChart, err = getLatestChartMetadata(helmClient, chartSpec.ChartName)
 
 	return versionInfo, err
@@ -120,7 +118,7 @@ func InstallOrUpgrade(repository repo.Entry, chartSpec helm.ChartSpec) (*dto.Ver
 		return nil, err
 	}
 
-	return buildVersionInfoDto(chartRelease), nil
+	return dto.NewVersionInfoDtoFromHelmRelease(chartRelease), nil
 }
 
 func Uninstall(chartSpec helm.ChartSpec) error {
@@ -155,21 +153,13 @@ func addAndUpdateChartRepos(helmClient helm.Client, repository repo.Entry) error
 	return helmClient.UpdateChartRepos()
 }
 
-func buildVersionInfoDto(release *release.Release) *dto.VersionInfoDto {
-	return &dto.VersionInfoDto{
-		ReleaseName:    release.Name,
-		ReleaseInfo:    release.Info,
-		InstalledChart: release.Chart.Metadata,
-	}
-}
-
-func getLatestChartMetadata(helmClient helm.Client, chartName string) (*chart.Metadata, error) {
+func getLatestChartMetadata(helmClient helm.Client, chartName string) (*dto.ChartMetaDataDto, error) {
 	latestChart, _, err := helmClient.GetChart(chartName, &action.ChartPathOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	return latestChart.Metadata, nil
+	return dto.NewChartMetaDataDtoFromHelmChartMetadata(latestChart.Metadata), nil
 }
 
 func getFullChartName(repoName string, chartName string) string {

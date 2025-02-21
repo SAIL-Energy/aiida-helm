@@ -274,7 +274,19 @@ func (app *App) installNewService(responseWriter http.ResponseWriter, request *h
 		return
 	}
 
-	versionInfo, err := app.ServicesInstaller.InstallNew(userId, chartName)
+	body, err := io.ReadAll(request.Body)
+	if err != nil {
+		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
+		return
+	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(request.Body)
+
+	var setupDto dto.SetupDto
+	_ = json.Unmarshal(body, &setupDto)
+
+	versionInfo, err := app.ServicesInstaller.InstallNew(userId, chartName, &setupDto)
 	if err != nil {
 		app.respondWithJSON(responseWriter, http.StatusInternalServerError, dto.NewErrorResponseDto(err.Error()))
 		return

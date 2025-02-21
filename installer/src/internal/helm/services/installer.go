@@ -7,9 +7,11 @@ import (
 	helm "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/repo"
+	"strings"
 )
 
 const namespace = "aiida-services"
+const maxReleasesPerChart = 1000
 
 type Installer struct {
 	Repository repo.Entry
@@ -24,34 +26,57 @@ func (serviceInstaller *Installer) GetVersionInfosRepo(userId *string, chartName
 }
 
 func (serviceInstaller *Installer) GetVersionInfo(chartName string, releaseName string) (*dto.VersionInfoDto, error) {
-	return helmInstaller.GetVersionInfo(serviceInstaller.Repository, serviceInstaller.getChartSpec(chartName, releaseName))
+	chartSpec := serviceInstaller.getChartSpec(chartName, releaseName, nil)
+	return helmInstaller.GetVersionInfo(serviceInstaller.Repository, chartSpec)
 }
 
-func (serviceInstaller *Installer) InstallNew(userId string, chartName string) (*dto.VersionInfoDto, error) {
+func (serviceInstaller *Installer) InstallNew(userId string, chartName string, setupDto *dto.SetupDto) (*dto.VersionInfoDto, error) {
 	versionInfos, err := serviceInstaller.GetVersionInfosRepo(&userId, &chartName)
 	if err != nil {
 		return nil, err
 	}
 
-	releaseName := generateReleaseName(userId, chartName, len(versionInfos))
+	releaseName := generateReleaseName(userId, chartName, versionInfos)
+	chartSpec := serviceInstaller.getChartSpec(chartName, releaseName, setupDto)
 
-	return helmInstaller.InstallOrUpgrade(serviceInstaller.Repository, serviceInstaller.getChartSpec(chartName, releaseName))
+	return helmInstaller.InstallOrUpgrade(serviceInstaller.Repository, chartSpec)
 }
 
 func (serviceInstaller *Installer) InstallOrUpgrade(chartName string, releaseName string) (*dto.VersionInfoDto, error) {
-	return helmInstaller.InstallOrUpgrade(serviceInstaller.Repository, serviceInstaller.getChartSpec(chartName, releaseName))
+	chartSpec := serviceInstaller.getChartSpec(chartName, releaseName, nil)
+	return helmInstaller.InstallOrUpgrade(serviceInstaller.Repository, chartSpec)
 }
 
 func (serviceInstaller *Installer) Uninstall(chartName string, releaseName string) error {
-	return helmInstaller.Uninstall(serviceInstaller.getChartSpec(chartName, releaseName))
+	chartSpec := serviceInstaller.getChartSpec(chartName, releaseName, nil)
+	return helmInstaller.Uninstall(chartSpec)
 }
 
-func (serviceInstaller *Installer) getChartSpec(chartName string, releaseName string) helm.ChartSpec {
-	return helmInstaller.GetChartSpec(namespace, serviceInstaller.Repository, releaseName, chartName, values.Options{}, false)
+func (serviceInstaller *Installer) getChartSpec(chartName string, releaseName string, setupDto *dto.SetupDto) helm.ChartSpec {
+	valuesOptions := values.Options{}
+	if setupDto != nil {
+		valuesOptions.Values = setupDto.CustomValues
+	}
+
+	return helmInstaller.GetChartSpec(
+		namespace,
+		serviceInstaller.Repository,
+		releaseName, chartName,
+		valuesOptions,
+		false,
+	)
 }
 
-func generateReleaseName(userId string, chartName string, versionsCount int) string {
-	releaseId := fmt.Sprintf("%d-%s", versionsCount+1, userId)
+func generateReleaseName(userId string, chartName string, versions []*dto.VersionInfoDto) string {
+	releaseNum := len(versions) + 1
+	var releaseId string
+
+	for ; releaseNum < maxReleasesPerChart; releaseNum++ {
+		releaseId = fmt.Sprintf("%d-%s", releaseNum, userId)
+		if !containsReleaseId(versions, releaseId) {
+			break
+		}
+	}
 
 	maxChartNameLength := helmInstaller.MaxReleaseNameLength - len(releaseId) - 1
 	if len(chartName) > maxChartNameLength {
@@ -59,4 +84,13 @@ func generateReleaseName(userId string, chartName string, versionsCount int) str
 	}
 
 	return fmt.Sprintf("%s-%s", chartName, releaseId)
+}
+
+func containsReleaseId(versions []*dto.VersionInfoDto, releaseId string) bool {
+	for _, version := range versions {
+		if strings.Contains(version.ReleaseName, releaseId) {
+			return true
+		}
+	}
+	return false
 }
