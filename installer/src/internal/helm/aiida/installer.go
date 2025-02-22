@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-const chartName = "aiida"
+const ChartName = "aiida"
 const namespace = "aiida"
 
 const secretsPath = "configs/secrets-template.yaml"
@@ -32,9 +32,9 @@ func NewInstaller(repository repo.Entry) *Installer {
 
 	return &Installer{
 		Repository:       repository,
-		ChartSpec:        helmInstaller.GetChartSpec(namespace, repository, chartName, chartName, valuesOptions, false),
+		ChartSpec:        helmInstaller.GetChartSpec(namespace, repository, ChartName, ChartName, valuesOptions, false),
 		SecretsInstaller: secrets.NewInstaller(namespace),
-		Encryptor:        secrets.NewEncryptor(namespace, secrets.ControllerName, chartName, secretsPath, sealedSecretsPath),
+		Encryptor:        secrets.NewEncryptor(namespace, secrets.ControllerName, ChartName, secretsPath, sealedSecretsPath),
 	}
 }
 

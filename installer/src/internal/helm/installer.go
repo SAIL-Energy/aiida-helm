@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+const InstallerChartName = "aiida-installer"
 const MaxReleaseNameLength = 53
 
 const timeout = 30 * time.Minute

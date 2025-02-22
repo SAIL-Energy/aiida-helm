@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/eddie-energy/aiida-helm/installer/internal/dto"
 	helmInstaller "github.com/eddie-energy/aiida-helm/installer/internal/helm"
+	"github.com/eddie-energy/aiida-helm/installer/internal/helm/aiida"
 	helm "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/repo"
@@ -31,6 +32,10 @@ func (serviceInstaller *Installer) GetVersionInfo(chartName string, releaseName 
 }
 
 func (serviceInstaller *Installer) InstallNew(userId string, chartName string, setupDto *dto.SetupDto) (*dto.VersionInfoDto, error) {
+	if err := verifyChartName(chartName); err != nil {
+		return nil, err
+	}
+
 	versionInfos, err := serviceInstaller.GetVersionInfosRepo(&userId, &chartName)
 	if err != nil {
 		return nil, err
@@ -43,6 +48,10 @@ func (serviceInstaller *Installer) InstallNew(userId string, chartName string, s
 }
 
 func (serviceInstaller *Installer) InstallOrUpgrade(chartName string, releaseName string) (*dto.VersionInfoDto, error) {
+	if err := verifyChartName(chartName); err != nil {
+		return nil, err
+	}
+
 	chartSpec := serviceInstaller.getChartSpec(chartName, releaseName, nil)
 	return helmInstaller.InstallOrUpgrade(serviceInstaller.Repository, chartSpec)
 }
@@ -65,6 +74,13 @@ func (serviceInstaller *Installer) getChartSpec(chartName string, releaseName st
 		valuesOptions,
 		false,
 	)
+}
+
+func verifyChartName(chartName string) error {
+	if chartName == aiida.ChartName || chartName == helmInstaller.InstallerChartName {
+		return fmt.Errorf("the chart name '%s' is reserved and cannot be used as a service", chartName)
+	}
+	return nil
 }
 
 func generateReleaseName(userId string, chartName string, versions []*dto.VersionInfoDto) string {
