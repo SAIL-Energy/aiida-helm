@@ -82,7 +82,10 @@ helm install cert-manager \
   jetstack/cert-manager
 
 ### CREATE GHCR SECRET
-make create-ghcr-secret GHCR_USERNAME="$GHCR_USERNAME" GHCR_PAT="$GHCR_PAT" NAMESPACE="$NAMESPACE"
+kubectl -n "$NAMESPACE" create secret docker-registry ghcr-secret \
+	  --docker-server=ghcr.io \
+	  --docker-username="$GHCR_USERNAME" \
+	  --docker-password="$GHCR_PAT"
 
 ### INSTALL AIIDA INSTALLER
 helm repo add aiida "https://eddie-energy.github.io/aiida-helm/$TRACK" --force-update

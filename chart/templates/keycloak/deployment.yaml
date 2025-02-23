@@ -26,6 +26,20 @@ spec:
               value: {{ include "aiida.keycloak.external-host" . }}
             - name: KC_HTTP_RELATIVE_PATH
               value: {{ .Values.keycloak.path }}
+            - name: KC_DB
+              value: "postgres"
+            - name: KC_DB_URL
+              value: {{ include "aiida.timescaledb.jdbc-url" . }}
+            - name: KC_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-timescaledb-secret
+                  key: username
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-timescaledb-secret
+                  key: password
             - name: KC_PROXY
               value: "edge"
             - name: KC_HEALTH_ENABLED

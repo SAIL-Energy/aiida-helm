@@ -3,12 +3,6 @@ RELEASE_NAME?=aiida-installer
 NAMESPACE?=aiida
 TRACK?=beta
 
-create-ghcr-secret:
-	kubectl -n $(NAMESPACE) create secret docker-registry ghcr-secret \
-	  --docker-server=ghcr.io \
-	  --docker-username=${GHCR_USERNAME} \
-	  --docker-password=${GHCR_PAT}
-
 package:
 	helm package $(CHART_PATH) \
 	--destination ./repository/$(TRACK)/packages

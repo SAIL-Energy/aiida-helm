@@ -10,3 +10,5 @@
 # Ignore created pem files and jks files (so no private keys can be pushed accidentally)
 *.jks
 *.pem
+
+secrets.yaml

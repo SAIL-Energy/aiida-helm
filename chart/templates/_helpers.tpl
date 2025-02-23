@@ -46,7 +46,7 @@ labels:
 {{- if .Values.ingress.tlsEnabled }}https{{- else }}http{{- end }}
 {{- end }}
 
-{{/* Helper to build the postgres Url */}}
+{{/* Helper to build the postgres url */}}
 {{- define "aiida.timescaledb.jdbc-url" -}}
 "jdbc:postgresql://{{ .Release.Name }}-timescaledb:{{ .Values.timescaledb.port }}/{{ .Values.timescaledb.database }}"
 {{- end }}
