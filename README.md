@@ -123,3 +123,20 @@ helm install aiida-installer \
 ```
 
 This ensures that AIIDA is deployed with the specified custom settings.
+
+### REST API
+
+The AIIDA Installer provides a REST API for managing the installation. The REST API should not be called from any other party than AIIDA Core. The following endpoints are available:
+
+- **GET /health** – Returns the health status.
+- **POST /login** – Login to installer with installation token and user ID.
+- **GET /auth/aiida** – Returns version information of AIIDA Core.
+- **POST /auth/aiida** – Installs or upgrades AIIDA Core.
+- **DELETE /auth/aiida** – Deletes AIIDA Core.
+- **GET /auth/services** – Returns a list of all installed services.
+- **GET /auth/services/user** – Returns a list of all user-installed services.
+- **GET /auth/services/{chartName}** – Returns a list of all releases of a service.
+- **POST /auth/services/{chartName}** – Installs a service.
+- **GET /auth/services/{chartName}/{releaseName}** – Returns information about a service release.
+- **POST /auth/services/{chartName}/{releaseName}** – Installs or upgrades a service release.
+- **DELETE /auth/services/{chartName}/{releaseName}** – Deletes a service release.
