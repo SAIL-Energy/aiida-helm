@@ -12,11 +12,13 @@ import (
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
+	"strings"
 )
 
 const secretNameSuffix = "secret"
 
-const secretTemplateAny = "*"
+const encryptionKeyPrefix = "encrypted"
+const autoGenerateValue = "*"
 
 const tokenDeploymentName = "core"
 const tokenSecretKey = "encryptedInstallerToken"
@@ -63,8 +65,8 @@ func (encryptor *Encryptor) EncryptSecrets() error {
 		for secretKey, secretItem := range deploymentSecrets {
 			secretName := fmt.Sprintf("%s-%s-%s", encryptor.ReleaseName, deploymentName, secretNameSuffix)
 
-			if secretItem == secretTemplateAny {
-				secretItem, err = password.Generate(32, 5, 5, false, false)
+			if secretItem == autoGenerateValue {
+				secretItem, err = password.Generate(32, 8, 0, false, true)
 
 				if err != nil {
 					return err
@@ -75,12 +77,15 @@ func (encryptor *Encryptor) EncryptSecrets() error {
 				token = secretItem
 			}
 
-			encryptedSecretItem, err := encryptor.EncryptSecret(pubKey, secretName, secretItem)
-			if err != nil {
-				return err
+			if strings.HasPrefix(secretKey, encryptionKeyPrefix) {
+				encryptedSecretItem, err := encryptor.EncryptSecret(pubKey, secretName, secretItem)
+				if err != nil {
+					return err
+				}
+				secretItem = *encryptedSecretItem
 			}
 
-			secrets[deploymentName][secretKey] = *encryptedSecretItem
+			secrets[deploymentName][secretKey] = secretItem
 		}
 	}
 

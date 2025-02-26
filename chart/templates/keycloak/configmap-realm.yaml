@@ -4,4 +4,60 @@ metadata:
   name: {{ .Release.Name }}-keycloak-realm-config
   {{- include "aiida.keycloak.labels" . | indent 2 }}
 data:
-{{ (.Files.Glob "env/keycloak/realm/**").AsConfig | indent 2 }}
+  keycloak-realm.json: |-
+    {
+      "realm": "EDDIE",
+      "enabled": true,
+      "loginTheme": "eddie-theme",
+      "defaultRoles": ["manage-account"],
+      "clients": [
+        {
+          "clientId": "AIIDA",
+          "enabled": true,
+          "redirectUris": ["{{ include "aiida.core.external-host" . }}*"],
+          "publicClient": false,
+          "secret": "{{ .Values.keycloak.clientSecret }}",
+          "directAccessGrantsEnabled": true
+        }
+      ],
+      "groups": [
+        {
+          "name": "aiida-user-group",
+          "path": "/aiida-user-group",
+          "clientRoles": {
+            "account": [
+              "manage-account"
+            ]
+          }
+        }
+      ],
+      "defaultGroups": [
+        "/aiida-user-group"
+      ],
+      "users": [
+        {
+          "username": "{{ .Values.keycloak.adminUsername }}",
+          "enabled": true,
+          "credentials": [
+            {
+              "type": "password",
+              "value": "{{ .Values.keycloak.adminPassword }}"
+            }
+          ]
+        },
+        {
+          "username": "aiida",
+          "email": "aiida@eddie.eu",
+          "firstName": "John",
+          "lastName": "Doe",
+          "enabled": true,
+          "groups": ["/aiida-user-group"],
+          "credentials": [
+            {
+              "type": "password",
+              "value": "aiida"
+            }
+          ]
+        }
+      ]
+    }

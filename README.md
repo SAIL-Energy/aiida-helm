@@ -86,6 +86,23 @@ To execute the script, replace `YOUR_USERNAME` and `YOUR_PERSONAL_ACCESS_TOKEN` 
 bash <(curl -sfL https://eddie-energy.github.io/aiida-helm/setup.bash) --ghcr-username="YOUR_USERNAME" --ghcr-pat="YOUR_PERSONAL_ACCESS_TOKEN"
 ```
 
+##### Optional flags include:
+- `--namespace` – The namespace to install AIIDA in (default: `aiida`).
+- `--services-namespace` - The namespace to install services in (default: `aiida-services`).
+- `--values` – The path to a custom `values.yaml` file.
+- `--track` – The repository track to use (default: `stable`).
+
+##### Values for production
+
+Use at least the following values for production:
+
+```yaml
+aiida:
+  ingress:
+    host: "aiida.example.com"
+    tlsEnabled: true
+```
+
 ### Customizing the Installation
 
 Like any Helm chart, the AIIDA installation can be customized by providing a `values.yaml` file.

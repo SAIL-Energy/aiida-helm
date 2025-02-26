@@ -23,13 +23,13 @@ spec:
               containerPort: {{ .Values.keycloak.managementPort }}
           env:
             - name: KC_HOSTNAME
-              value: {{ include "aiida.keycloak.external-host" . }}
+              value: "{{ include "aiida.keycloak.external-host" . }}"
             - name: KC_HTTP_RELATIVE_PATH
               value: {{ .Values.keycloak.path }}
             - name: KC_DB
               value: "postgres"
             - name: KC_DB_URL
-              value: {{ include "aiida.timescaledb.jdbc-url" . }}
+              value: "{{ include "aiida.timescaledb.jdbc-url" . }}"
             - name: KC_DB_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -44,16 +44,6 @@ spec:
               value: "edge"
             - name: KC_HEALTH_ENABLED
               value: "true"
-            - name: KEYCLOAK_ADMIN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-keycloak-secret
-                  key: adminUsername
-            - name: KEYCLOAK_ADMIN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-keycloak-secret
-                  key: adminPassword
           volumeMounts:
             - name: keycloak-realm-config
               mountPath: /opt/keycloak/data/import/

@@ -48,20 +48,20 @@ labels:
 
 {{/* Helper to build the postgres url */}}
 {{- define "aiida.timescaledb.jdbc-url" -}}
-"jdbc:postgresql://{{ .Release.Name }}-timescaledb:{{ .Values.timescaledb.port }}/{{ .Values.timescaledb.database }}"
+jdbc:postgresql://{{ .Release.Name }}-timescaledb:{{ .Values.timescaledb.port }}/{{ .Values.timescaledb.database }}
 {{- end }}
 
 {{/* Helper to build the external core host */}}
 {{- define "aiida.core.external-host" -}}
-"{{ include "aiida.ingress.protocol" . }}://{{ .Values.ingress.host }}{{ .Values.core.path }}"
+{{ include "aiida.ingress.protocol" . }}://{{ .Values.ingress.host }}{{ .Values.core.path }}
 {{- end }}
 
 {{/* Helper to build the internal keycloak host */}}
 {{- define "aiida.keycloak.external-host" -}}
-"{{ include "aiida.ingress.protocol" . }}://{{ .Values.ingress.host }}{{ .Values.keycloak.path }}"
+{{ include "aiida.ingress.protocol" . }}://{{ .Values.ingress.host }}{{ .Values.keycloak.path }}
 {{- end }}
 
 {{/* Helper to build the internal keycloak host */}}
 {{- define "aiida.keycloak.internal-host" -}}
-"http://{{ .Release.Name }}-keycloak:{{ .Values.keycloak.port }}{{ .Values.keycloak.path }}"
+http://{{ .Release.Name }}-keycloak:{{ .Values.keycloak.port }}{{ .Values.keycloak.path }}
 {{- end }}

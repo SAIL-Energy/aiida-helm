@@ -22,7 +22,7 @@ spec:
             - name: SERVER_SERVLET_CONTEXT_PATH
               value: {{ .Values.core.path }}
             - name: SPRING_DATASOURCE_URL
-              value: {{ include "aiida.timescaledb.jdbc-url" . }}
+              value: "{{ include "aiida.timescaledb.jdbc-url" . }}"
             - name: SPRING_DATASOURCE_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -41,11 +41,11 @@ spec:
             - name: AIIDA_STREAMER_POLL_INTERVAL
               value: {{ .Values.core.streamerPollInterval | quote }}
             - name: AIIDA_EXTERNAL_HOST
-              value: {{ include "aiida.core.external-host" . }}
+              value: "{{ include "aiida.core.external-host" . }}"
             - name: KEYCLOAK_EXTERNAL_HOST
-              value: {{ include "aiida.keycloak.external-host" . }}
+              value: "{{ include "aiida.keycloak.external-host" . }}"
             - name: KEYCLOAK_INTERNAL_HOST
-              value: {{ include "aiida.keycloak.internal-host" . }}
+              value: "{{ include "aiida.keycloak.internal-host" . }}"
           readinessProbe:
             httpGet:
               path: {{ .Values.core.path }}/actuator/health/readiness

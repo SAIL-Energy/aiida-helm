@@ -14,15 +14,16 @@ aiida:
 
 secrets:
   core:
-    encryptedInstallerToken: "admin"
+    encryptedInstallerToken: "*"
   timescaledb:
-    encryptedUsername: "admin"
-    encryptedPassword: "admin"
+    encryptedUsername: "*"
+    encryptedPassword: "*"
   nanomq:
-    encryptedPwd: "admin:admin"
+    encryptedPwd: ""
   teleinfo2mqtt:
     encryptedMqttUsername: "*"
     encryptedMqttPassword: "*"
   keycloak:
-    encryptedAdminUsername: "admin"
-    encryptedAdminPassword: "admin"
+    clientSecret: "*"
+    adminUsername: "*"
+    adminPassword: "*"
