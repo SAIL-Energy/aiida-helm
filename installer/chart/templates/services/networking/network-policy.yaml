@@ -3,8 +3,8 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ .Release.Name }}-services-network-policy
-  namespace: {{ .Values.core.services.namespace }}
+  name: {{ .Release.Name }}-network-policy
+  namespace: {{ .Values.service.namespace }}
 spec:
   podSelector: {}
   policyTypes:
@@ -17,6 +17,10 @@ spec:
               name: {{ .Release.Namespace }}
   egress:
     - to:
+        - namespaceSelector:
+            matchLabels:
+              name: {{ .Release.Namespace }}
+    - to:
         - namespaceSelector: {}
           podSelector:
             matchLabels:
@@ -24,7 +28,3 @@ spec:
       ports:
         - port: 53
           protocol: UDP
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              name: {{ .Release.Namespace }}

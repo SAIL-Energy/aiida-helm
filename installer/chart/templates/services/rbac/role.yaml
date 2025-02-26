@@ -1,8 +1,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ .Release.Name }}-services-role
-  namespace: {{ .Values.core.services.namespace }}
+  name: {{ .Release.Name }}-role
+  namespace: {{ .Values.service.namespace }}
 rules:
   - apiGroups: ["*"]
     resources: ["*"]
