@@ -74,7 +74,7 @@ To install AIIDA on a **K3s** cluster, follow these steps:
 4. Install **Helm**.
 5. Install the **AIIDA Installer** with Helm on the cluster.
 
-The `setup.bash` script is provided to automate the setup process on Linux.
+The [`setup.bash`](https://eddie-energy.github.io/aiida-helm/setup.bash) script simplifies the installation process on Linux by automating the setup steps.
 
 #### Running the Setup Script
 
@@ -83,7 +83,7 @@ Before running the script, create a **GitHub Personal Access Token** with the `r
 To execute the script, replace `YOUR_USERNAME` and `YOUR_PERSONAL_ACCESS_TOKEN` with your credentials, then run:
 
 ```bash
-./setup.bash --ghcr-username="YOUR_USERNAME" --ghcr-pat="YOUR_PERSONAL_ACCESS_TOKEN"
+bash <(curl -sfL https://eddie-energy.github.io/aiida-helm/setup.bash) --ghcr-username="YOUR_USERNAME" --ghcr-pat="YOUR_PERSONAL_ACCESS_TOKEN"
 ```
 
 ### Customizing the Installation
