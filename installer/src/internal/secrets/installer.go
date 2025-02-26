@@ -13,6 +13,7 @@ const ControllerName = "aiida-sealed-secrets-controller"
 const repositoryUrl = "https://bitnami-labs.github.io/sealed-secrets"
 const repositoryName = "sealed-secrets"
 const chartName = "sealed-secrets"
+const clusterRoleName = "aiida-secrets-unsealer"
 
 type Installer struct {
 	Repository repo.Entry
@@ -25,7 +26,11 @@ func NewInstaller(namespace string) *Installer {
 		URL:                repositoryUrl,
 		PassCredentialsAll: true,
 	}
-	valuesOptions := values.Options{StringValues: []string{"fullnameOverride=" + ControllerName}}
+	valuesOptions := values.Options{
+		StringValues: []string{
+			"fullnameOverride=" + ControllerName,
+			"rbac.clusterRoleName=" + clusterRoleName,
+		}}
 
 	return &Installer{
 		Repository: repository,
