@@ -46,6 +46,8 @@ spec:
               value: "{{ include "aiida.keycloak.external-host" . }}"
             - name: KEYCLOAK_INTERNAL_HOST
               value: "{{ include "aiida.keycloak.internal-host" . }}"
+            - name: KEYCLOAK_CLIENT_SECRET
+              value: "{{ .Values.keycloak.clientSecret }}"
           readinessProbe:
             httpGet:
               path: {{ .Values.core.path }}/actuator/health/readiness

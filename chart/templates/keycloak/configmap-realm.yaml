@@ -36,16 +36,6 @@ data:
       ],
       "users": [
         {
-          "username": "{{ .Values.keycloak.adminUsername }}",
-          "enabled": true,
-          "credentials": [
-            {
-              "type": "password",
-              "value": "{{ .Values.keycloak.adminPassword }}"
-            }
-          ]
-        },
-        {
           "username": "aiida",
           "email": "aiida@eddie.eu",
           "firstName": "John",

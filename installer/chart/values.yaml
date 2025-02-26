@@ -25,5 +25,5 @@ secrets:
     encryptedMqttPassword: "*"
   keycloak:
     clientSecret: "*"
-    adminUsername: "*"
-    adminPassword: "*"
+    encryptedAdminUsername: "*"
+    encryptedAdminPassword: "*"
