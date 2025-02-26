@@ -15,11 +15,17 @@ spec:
         - namespaceSelector:
             matchLabels:
               name: {{ .Release.Namespace }}
+        - podSelector:
+            matchLabels:
+              app: aiida-core
   egress:
     - to:
         - namespaceSelector:
             matchLabels:
               name: {{ .Release.Namespace }}
+        - podSelector:
+            matchLabels:
+              app: aiida-core
     - to:
         - namespaceSelector: {}
           podSelector:
