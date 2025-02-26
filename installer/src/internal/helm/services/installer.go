@@ -11,19 +11,23 @@ import (
 	"strings"
 )
 
-const namespace = "aiida-services"
+const defaultNamespace = "aiida-services"
 const maxReleasesPerChart = 1000
 
 type Installer struct {
 	Repository repo.Entry
+	Namespace  string
 }
 
-func NewInstaller(repository repo.Entry) *Installer {
-	return &Installer{Repository: repository}
+func NewInstaller(repository repo.Entry, namespace string) *Installer {
+	if namespace == "" {
+		namespace = defaultNamespace
+	}
+	return &Installer{Repository: repository, Namespace: namespace}
 }
 
 func (serviceInstaller *Installer) GetVersionInfosRepo(userId *string, chartName *string) ([]*dto.VersionInfoDto, error) {
-	return helmInstaller.GetVersionInfosRepo(serviceInstaller.Repository, namespace, chartName, userId)
+	return helmInstaller.GetVersionInfosRepo(serviceInstaller.Repository, serviceInstaller.Namespace, chartName, userId)
 }
 
 func (serviceInstaller *Installer) GetVersionInfo(chartName string, releaseName string) (*dto.VersionInfoDto, error) {
@@ -68,7 +72,7 @@ func (serviceInstaller *Installer) getChartSpec(chartName string, releaseName st
 	}
 
 	return helmInstaller.GetChartSpec(
-		namespace,
+		serviceInstaller.Namespace,
 		serviceInstaller.Repository,
 		releaseName, chartName,
 		valuesOptions,

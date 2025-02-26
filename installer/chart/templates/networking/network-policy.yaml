@@ -11,6 +11,4 @@ spec:
     - Ingress
   ingress:
     - from:
-        - namespaceSelector:
-            matchLabels:
-              name: {{ .Release.Namespace }}
+        - podSelector: {}

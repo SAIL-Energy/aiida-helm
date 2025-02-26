@@ -22,6 +22,8 @@ spec:
           env:
             - name: REPOSITORY_TRACK
               value: "{{ .Values.core.repositoryTrack }}"
+            - name: SERVICES_NAMESPACE
+              value: "{{ .Values.core.services.namespace }}"
           readinessProbe:
             httpGet:
               path: /health

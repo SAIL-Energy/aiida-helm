@@ -51,6 +51,8 @@ func (app *App) Run(addr string) {
 		repositoryTrack = repositoryDefaultTrack
 	}
 
+	servicesNamespace := os.Getenv("SERVICES_NAMESPACE")
+
 	app.Router = mux.NewRouter()
 
 	secureRouter := app.Router.PathPrefix("/auth").Subrouter()
@@ -67,7 +69,7 @@ func (app *App) Run(addr string) {
 		PassCredentialsAll: true,
 	}
 	app.AiidaInstaller = aiida.NewInstaller(app.Repository)
-	app.ServicesInstaller = services.NewInstaller(app.Repository)
+	app.ServicesInstaller = services.NewInstaller(app.Repository, servicesNamespace)
 
 	versionInfo, err := app.AiidaInstaller.InstallOrUpgrade()
 	if err != nil {

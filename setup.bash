@@ -8,8 +8,10 @@ TRACK_ARG="--track"
 TRACK=${TRACK:-"stable"}
 VALUES_ARG="--values"
 VALUES=""
-
+NAMESPACE_ARG="--namespace"
 NAMESPACE="aiida"
+SERVICES_NAMESPACE_ARG="--services-namespace"
+SERVICES_NAMESPACE="aiida-services"
 
 display_help () {
   echo -e "This script installs the required tools to deploy AIIDA on a k3s cluster."
@@ -19,6 +21,8 @@ display_help () {
   echo -e "  --help\t\t\tDisplay this help message."
   echo -e "  --ghcr-username=<username>\tThe GitHub Container Registry username."
   echo -e "  --ghcr-pat=<pat>\t\tThe GitHub Container Registry Personal Access Token."
+  echo -e "  --namespace=<namespace>\t\tThe namespace for the installer. Default is 'aiida'."
+  echo -e "  --services-namespace=<services-namespace>\t\tThe namespace for the services. Default is 'aiida-services'."
   echo -e "  --track=<track>\t\tThe track to install. Default is 'stable'."
   echo -e "  --values=<values>\t\tThe values file to use for the installation. Default is none."
 }
@@ -29,14 +33,17 @@ for arg in "$@"; do
       display_help
       exit 0
       ;;
-    ${NAMESPACE_ARG}*)
-      NAMESPACE="${arg#*=}"
-      ;;
     ${GHCR_USERNAME_ARG}*)
       GHCR_USERNAME="${arg#*=}"
       ;;
     ${GHCR_PAT_ARG}*)
       GHCR_PAT="${arg#*=}"
+      ;;
+    ${NAMESPACE_ARG}*)
+      NAMESPACE="${arg#*=}"
+      ;;
+    ${SERVICES_NAMESPACE_ARG}*)
+      SERVICES_NAMESPACE="${arg#*=}"
       ;;
     *)
       echo "Unknown argument: $arg"
@@ -65,6 +72,7 @@ rm kubectl
 
 ### CREATE NAMESPACE
 kubectl create namespace "$NAMESPACE"
+kubectl create namespace "$SERVICES_NAMESPACE"
 
 ### INSTALL HELM
 curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
@@ -92,5 +100,6 @@ helm repo add aiida "https://eddie-energy.github.io/aiida-helm/$TRACK" --force-u
 
 helm install aiida-installer \
   --namespace "$NAMESPACE" \
+  --set core.services.namespace="$SERVICES_NAMESPACE" \
   --values "$VALUES" \
   aiida/aiida-installer

@@ -6,6 +6,8 @@ core:
   version: "latest"
   port: 8010
   repositoryTrack: "stable"
+  services:
+    namespace: "aiida-services"
 
 aiida:
 

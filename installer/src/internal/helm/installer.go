@@ -33,7 +33,7 @@ func GetChartSpec(
 		Namespace:       namespace,
 		CreateNamespace: true,
 		ValuesOptions:   valuesOptions,
-		SkipCRDs:        true,
+		SkipCRDs:        false,
 		Wait:            wait,
 		Timeout:         timeout,
 	}
