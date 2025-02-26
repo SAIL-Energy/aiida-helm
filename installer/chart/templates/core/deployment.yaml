@@ -23,7 +23,7 @@ spec:
             - name: REPOSITORY_TRACK
               value: "{{ .Values.core.repositoryTrack }}"
             - name: SERVICES_NAMESPACE
-              value: "{{ .Values.service.namespace }}"
+              value: "{{ .Values.aiidaServices.namespace }}"
           readinessProbe:
             httpGet:
               path: /health

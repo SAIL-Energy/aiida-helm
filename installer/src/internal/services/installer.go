@@ -2,9 +2,9 @@ package services
 
 import (
 	"fmt"
+	"github.com/eddie-energy/aiida-helm/installer/internal/aiida"
 	"github.com/eddie-energy/aiida-helm/installer/internal/dto"
 	helmInstaller "github.com/eddie-energy/aiida-helm/installer/internal/helm"
-	"github.com/eddie-energy/aiida-helm/installer/internal/helm/aiida"
 	helm "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/repo"
