@@ -28,14 +28,16 @@ func GetChartSpec(
 	wait bool,
 ) helm.ChartSpec {
 	return helm.ChartSpec{
-		ReleaseName:     releaseName,
-		ChartName:       getFullChartName(repository.Name, chartName),
-		Namespace:       namespace,
-		CreateNamespace: true,
-		ValuesOptions:   valuesOptions,
-		SkipCRDs:        false,
-		Wait:            wait,
-		Timeout:         timeout,
+		ReleaseName:          releaseName,
+		ChartName:            getFullChartName(repository.Name, chartName),
+		Namespace:            namespace,
+		CreateNamespace:      true,
+		ValuesOptions:        valuesOptions,
+		SkipCRDs:             false,
+		Wait:                 wait,
+		Timeout:              timeout,
+		Force:                true,
+		ResetThenReuseValues: true,
 	}
 }
 
