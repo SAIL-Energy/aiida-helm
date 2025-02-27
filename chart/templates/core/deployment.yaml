@@ -44,6 +44,8 @@ spec:
               value: "{{ include "aiida.core.external-host" . }}"
             - name: KEYCLOAK_EXTERNAL_HOST
               value: "{{ include "aiida.keycloak.external-host" . }}"
+            - name: MQTT_EXTERNAL_HOST
+              value: "{{ include "aiida.nanomq.external-host" . }}"
             - name: KEYCLOAK_INTERNAL_HOST
               value: "{{ include "aiida.keycloak.internal-host" . }}"
             - name: KEYCLOAK_CLIENT_SECRET
