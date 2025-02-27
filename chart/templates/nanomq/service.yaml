@@ -9,11 +9,11 @@ spec:
     app: {{ .Release.Name }}-nanomq
   ports:
     - name: mqtt-std
-      port: {{ .Values.nanomq.stdPort }}
+      port: {{ .Values.nanomq.stdPortExt }}
       targetPort: mqtt-std
     - name: mqtt-ssl
-      port: {{ .Values.nanomq.sslPort }}
+      port: {{ .Values.nanomq.sslPortExt }}
       targetPort: mqtt-ssl
     - name: mqtt-ws
-      port: {{ .Values.nanomq.wsPort }}
+      port: {{ .Values.nanomq.wsPortExt }}
       targetPort: mqtt-ws

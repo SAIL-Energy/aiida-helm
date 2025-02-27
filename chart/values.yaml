@@ -28,6 +28,9 @@ nanomq:
   stdPort: 1883
   sslPort: 8883
   wsPort: 8083
+  stdPortExt: 1883
+  sslPortExt: 8883
+  wsPortExt: 8083
 
 teleinfo2mqtt:
   enabled: false
