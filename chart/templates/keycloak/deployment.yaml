@@ -49,6 +49,16 @@ spec:
               value: "xforwarded"
             - name: KC_HEALTH_ENABLED
               value: "true"
+            - name: KEYCLOAK_ADMIN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-keycloak-secret
+                  key: adminUsername
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                  secretKeyRef:
+                    name: {{ .Release.Name }}-keycloak-secret
+                    key: adminPassword
           volumeMounts:
             - name: keycloak-realm-config
               mountPath: /opt/keycloak/data/import/

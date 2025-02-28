@@ -17,12 +17,14 @@ secrets:
   core:
     encryptedInstallerToken: "*"
   timescaledb:
-    encryptedUsername: "*?"
-    encryptedPassword: "*?"
+    encryptedUsername: "*?" # Only change during initial installation!
+    encryptedPassword: "*?" # Only change during initial installation!
   nanomq:
     encryptedPwd: ""
   teleinfo2mqtt:
     encryptedMqttUsername: "*"
     encryptedMqttPassword: "*"
   keycloak:
-    clientSecret: "*?"
+    clientSecret: "*?" # Only change during initial installation!
+    encryptedAdminUsername: "" # Only applied during initial installation
+    encryptedAdminPassword: "" # Only applied during initial installation

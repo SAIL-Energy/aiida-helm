@@ -101,6 +101,11 @@ aiida:
   ingress:
     host: "aiida.example.com"
     tlsEnabled: true
+
+secrets:
+  keycloak:
+    encryptedAdminUsername: "some-username"
+    encryptedAdminPassword: "some-password"
 ```
 
 ### Customizing the Installation
@@ -133,12 +138,20 @@ aiida:
     port: 8888
 
 secrets:
-  keycloak:
-    clientSecret: "secret"
-  timescaledb:
-    encryptedUsername: "admin"
-  nanomq:
-    encryptedPwd: "admin: supersafe"
+   core:
+      encryptedInstallerToken: "Test"
+   timescaledb:
+      encryptedUsername: "*?" # Only change during initial installation!
+      encryptedPassword: "*?" # Only change during initial installation!
+   nanomq:
+      encryptedPwd: "admin:supersafe"
+   teleinfo2mqtt:
+      encryptedMqttUsername: "*"
+      encryptedMqttPassword: "*"
+   keycloak:
+      clientSecret: "*?" # Only change during initial installation!
+      encryptedAdminUsername: "" # Only applied during initial installation
+      encryptedAdminPassword: "" # Only applied during initial installation
 ```
 
 #### Applying Customizations

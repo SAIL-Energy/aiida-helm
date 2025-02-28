@@ -11,6 +11,8 @@ spec:
   template:
     metadata:
     {{- include "aiida.core.labels" . | indent 6 }}
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/core/secret.yaml") . | sha256sum }}
     spec:
       containers:
         - name: aiida-core
