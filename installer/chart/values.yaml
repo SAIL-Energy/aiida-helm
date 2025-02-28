@@ -6,6 +6,7 @@ core:
   version: "latest"
   port: 8010
   repositoryTrack: "stable"
+  storageSize: "1Mi"
 
 aiidaServices:
   namespace: "aiida-services"
@@ -25,5 +26,3 @@ secrets:
     encryptedMqttPassword: "*"
   keycloak:
     clientSecret: "*"
-    encryptedAdminUsername: "*"
-    encryptedAdminPassword: "*"

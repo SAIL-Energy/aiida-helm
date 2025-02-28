@@ -12,7 +12,6 @@ spec:
     metadata:
     {{- include "aiida.keycloak.labels" . | indent 6 }}
       annotations:
-        checksum/secret: {{ include (print $.Template.BasePath "/keycloak/secret.yaml") . | sha256sum }}
         checksum/configmap-realm: {{ include (print $.Template.BasePath "/keycloak/configmap-realm.yaml") . | sha256sum }}
         checksum/configmap-theme: {{ include (print $.Template.BasePath "/keycloak/configmap-theme.yaml") . | sha256sum }}
     spec:
@@ -48,16 +47,6 @@ spec:
               value: "edge"
             - name: KC_HEALTH_ENABLED
               value: "true"
-            - name: KC_BOOTSTRAP_ADMIN_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-keycloak-secret
-                  key: adminUsername
-            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-keycloak-secret
-                  key: adminPassword
           volumeMounts:
             - name: keycloak-realm-config
               mountPath: /opt/keycloak/data/import/

@@ -135,7 +135,8 @@ aiida:
 secrets:
   keycloak:
     clientSecret: "secret"
-    encryptedAdminUsername: "admin"
+  timescaledb:
+    encryptedUsername: "admin"
   nanomq:
     encryptedPwd: "admin: supersafe"
 ```

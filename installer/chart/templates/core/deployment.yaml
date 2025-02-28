@@ -37,11 +37,16 @@ spec:
             - name: configmap
               mountPath: /src/configs/secrets-template.yaml
               subPath: secrets-template.yaml
+            - name: pvc
+              mountPath: /src/data
 
       volumes:
         - name: configmap
           configMap:
             name: {{ .Release.Name }}-configmap
+        - name: pvc
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-pvc
 
       imagePullSecrets:
         - name: {{ .Values.ghcrImagePullSecrets.name }}

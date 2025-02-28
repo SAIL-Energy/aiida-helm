@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -169,6 +170,11 @@ func (encryptor *Encryptor) readFromYamlFile(filePath string) (map[string]map[st
 }
 
 func (encryptor *Encryptor) writeToYamlFile(filePath string, values map[string]map[string]string) error {
+	dir := filepath.Dir(filePath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
 	encryptedValues, err := yaml.Marshal(values)
 	if err != nil {
 		return err

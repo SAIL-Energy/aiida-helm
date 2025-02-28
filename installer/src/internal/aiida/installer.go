@@ -13,9 +13,9 @@ import (
 const ChartName = "aiida"
 const namespace = "aiida"
 
-const secretsPath = "configs/secrets-template.yaml"
-const sealedSecretsPath = "configs/secrets.yaml"
 const customValues = "configs/aiida-values.yaml"
+const secretsPath = "configs/secrets-template.yaml"
+const sealedSecretsPath = "data/secrets.yaml"
 
 type Installer struct {
 	Repository       repo.Entry

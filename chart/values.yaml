@@ -52,6 +52,4 @@ keycloak:
   managementPort: 9000
   path: "/auth"
   clientSecret: ""
-  encryptedAdminUsername: ""
-  encryptedAdminPassword: ""
 
