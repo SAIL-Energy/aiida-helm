@@ -111,7 +111,16 @@ Customization options include:
 
 1. **Installer Settings** – Modify parameters for the installer itself, such as the repository track.
 2. **AIIDA Core Settings** – Adjust AIIDA core configurations in the `aiida` section (e.g., change the port).
-3. **Secrets** – Add secrets to the `secrets` section (e.g., add a password for the NanoMQ service). Otherwise, the secrets will be generated automatically.
+3. **Secrets** – Add secrets to the `secrets` section. For example, a `"username:password"` pair can be specified for NanoMQ. If no value is provided, secrets are generated automatically—except for NanoMQ, which remains empty. The following options are available:
+   - **`"*"`** – The secret is automatically generated on every update.
+   - **`"*!"`** – The secret is generated only if it has not been stored already.
+   - **`""`** – The secret remains empty.
+   - **`"MY-SECRET"`** – The secret is set to the specified value.
+
+#### **Encryption and Storage**
+- Secrets prefixed with `encrypted` are **sealed and stored in Kubernetes secrets**.
+- Other secrets are **stored as plain text in ConfigMaps**.
+- **Randomly generated secrets cannot be retrieved**, even by administrators.
 
 #### Example `values.yaml` Configuration:
 
@@ -124,6 +133,9 @@ aiida:
     port: 8888
 
 secrets:
+  keycloak:
+    clientSecret: "secret"
+    encryptedAdminUsername: "admin"
   nanomq:
     encryptedPwd: "admin: supersafe"
 ```

@@ -19,6 +19,7 @@ const secretNameSuffix = "secret"
 
 const encryptionKeyPrefix = "encrypted"
 const autoGenerateValue = "*"
+const autoGenerateIfNotEmptyValue = "*!"
 
 const tokenDeploymentName = "core"
 const tokenSecretKey = "encryptedInstallerToken"
@@ -54,6 +55,14 @@ func (encryptor *Encryptor) EncryptSecrets() error {
 		return err
 	}
 
+	var currentSecrets map[string]map[string]string
+	if _, err := os.Stat(encryptor.SealedSecretsPath); err == nil {
+		currentSecrets, err = encryptor.readFromYamlFile(encryptor.SealedSecretsPath)
+		if err != nil {
+			return err
+		}
+	}
+
 	pubKey, err := encryptor.GetPublicKey()
 	if err != nil {
 		return err
@@ -64,6 +73,15 @@ func (encryptor *Encryptor) EncryptSecrets() error {
 	for deploymentName, deploymentSecrets := range secrets {
 		for secretKey, secretItem := range deploymentSecrets {
 			secretName := fmt.Sprintf("%s-%s-%s", encryptor.ReleaseName, deploymentName, secretNameSuffix)
+
+			if secretItem == autoGenerateIfNotEmptyValue {
+				currentSecret := currentSecrets[deploymentName][secretKey]
+				if currentSecret != "" {
+					secretItem = currentSecret
+				} else {
+					secretItem = autoGenerateValue
+				}
+			}
 
 			if secretItem == autoGenerateValue {
 				secretItem, err = password.Generate(32, 8, 0, false, true)

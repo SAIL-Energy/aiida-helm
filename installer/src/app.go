@@ -134,8 +134,6 @@ func (app *App) initializeRoutes() {
 }
 
 func (app *App) getHealthCheck(responseWriter http.ResponseWriter, _ *http.Request) {
-	log.Println("Health check")
-
 	app.respondWithJSON(responseWriter, http.StatusOK, dto.NewSuccessResponseDto())
 }
 
@@ -384,7 +382,9 @@ func (app *App) uninstallService(responseWriter http.ResponseWriter, request *ht
 }
 
 func (app *App) respondWithJSON(responseWriter http.ResponseWriter, code int, response dto.ResponseDto) {
-	log.Printf("Responding with code %d with success %t and error %s", code, response.Success, response.Error)
+	if !response.Success {
+		log.Printf("Responding with error: %s", response.Error)
+	}
 
 	responseJson, _ := json.Marshal(response)
 

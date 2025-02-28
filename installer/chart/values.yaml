@@ -16,8 +16,8 @@ secrets:
   core:
     encryptedInstallerToken: "*"
   timescaledb:
-    encryptedUsername: "*"
-    encryptedPassword: "*"
+    encryptedUsername: "*!"
+    encryptedPassword: "*!"
   nanomq:
     encryptedPwd: ""
   teleinfo2mqtt:
