@@ -11,6 +11,8 @@ spec:
   template:
     metadata:
     {{- include "aiida.timescaledb.labels" . | indent 6 }}
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/timescaledb/secret.yaml") . | sha256sum }}
     spec:
       containers:
         - name: timescaledb

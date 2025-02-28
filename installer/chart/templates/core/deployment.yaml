@@ -11,6 +11,8 @@ spec:
   template:
     metadata:
     {{- include "installer.core.labels" . | indent 6 }}
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/core/configmap.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ .Release.Name }}-sa
       containers:

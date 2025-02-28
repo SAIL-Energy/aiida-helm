@@ -12,6 +12,8 @@ spec:
   template:
     metadata:
     {{- include "aiida.teleinfo2mqtt.labels" . | indent 6 }}
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/teleinfo2mqtt/secret.yaml") . | sha256sum }}
     spec:
       containers:
         - name: teleinfo2mqtt

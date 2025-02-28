@@ -11,6 +11,9 @@ spec:
   template:
     metadata:
     {{- include "aiida.nanomq.labels" . | indent 6 }}
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/nanomq/secret.yaml") . | sha256sum }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/nanomq/configmap.yaml") . | sha256sum }}
     spec:
       containers:
         - name: nanomq
