@@ -18,7 +18,7 @@ spec:
       containers:
         - name: keycloak
           image: "quay.io/keycloak/keycloak:{{ .Values.keycloak.version }}"
-          args: ["-v", "start-dev", "--import-realm"]
+          args: ["-v", "start", "--import-realm"]
           ports:
             - name: keycloak
               containerPort: {{ .Values.keycloak.port }}
@@ -27,6 +27,8 @@ spec:
           env:
             - name: KC_HOSTNAME
               value: "{{ include "aiida.keycloak.external-host" . }}"
+            - name: KC_HTTP_ENABLED
+              value: "true"
             - name: KC_HTTP_RELATIVE_PATH
               value: {{ .Values.keycloak.path }}
             - name: KC_DB
@@ -43,8 +45,8 @@ spec:
                 secretKeyRef:
                   name: {{ .Release.Name }}-timescaledb-secret
                   key: password
-            - name: KC_PROXY
-              value: "edge"
+            - name: KC_PROXY_HEADERS
+              value: "xforwarded"
             - name: KC_HEALTH_ENABLED
               value: "true"
           volumeMounts:

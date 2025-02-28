@@ -7,7 +7,7 @@ on:
 jobs:
   check-commit-message:
     name: Check Commit Message
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Check for referenced issue
         uses: gsactions/commit-message-checker@v2
