@@ -113,7 +113,7 @@ Customization options include:
 2. **AIIDA Core Settings** – Adjust AIIDA core configurations in the `aiida` section (e.g., change the port).
 3. **Secrets** – Add secrets to the `secrets` section. For example, a `"username:password"` pair can be specified for NanoMQ. If no value is provided, secrets are generated automatically—except for NanoMQ, which remains empty. The following options are available:
    - **`"*"`** – The secret is automatically generated on every update.
-   - **`"*!"`** – The secret is generated only if it has not been stored already.
+   - **`"*?"`** – The secret is generated only if it has not been stored already.
    - **`""`** – The secret remains empty.
    - **`"MY-SECRET"`** – The secret is set to the specified value.
 

@@ -20,7 +20,7 @@ const secretNameSuffix = "secret"
 
 const encryptionKeyPrefix = "encrypted"
 const autoGenerateValue = "*"
-const autoGenerateIfNotEmptyValue = "*!"
+const autoGenerateIfNotEmptyValue = "*?"
 
 const tokenDeploymentName = "core"
 const tokenSecretKey = "encryptedInstallerToken"
