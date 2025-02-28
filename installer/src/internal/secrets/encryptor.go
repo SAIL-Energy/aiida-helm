@@ -74,11 +74,13 @@ func (encryptor *Encryptor) EncryptSecrets() error {
 	for deploymentName, deploymentSecrets := range secrets {
 		for secretKey, secretItem := range deploymentSecrets {
 			secretName := fmt.Sprintf("%s-%s-%s", encryptor.ReleaseName, deploymentName, secretNameSuffix)
+			isAlreadyEncrypted := false
 
 			if secretItem == autoGenerateIfNotEmptyValue {
 				currentSecret := currentSecrets[deploymentName][secretKey]
 				if currentSecret != "" {
 					secretItem = currentSecret
+					isAlreadyEncrypted = strings.HasPrefix(secretKey, encryptionKeyPrefix)
 				} else {
 					secretItem = autoGenerateValue
 				}
@@ -96,7 +98,7 @@ func (encryptor *Encryptor) EncryptSecrets() error {
 				token = secretItem
 			}
 
-			if strings.HasPrefix(secretKey, encryptionKeyPrefix) {
+			if strings.HasPrefix(secretKey, encryptionKeyPrefix) && !isAlreadyEncrypted {
 				encryptedSecretItem, err := encryptor.EncryptSecret(pubKey, secretName, secretItem)
 				if err != nil {
 					return err
