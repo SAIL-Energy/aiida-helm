@@ -56,7 +56,7 @@ jdbc:postgresql://{{ .Release.Name }}-timescaledb:{{ .Values.timescaledb.port }}
 {{ include "aiida.ingress.protocol" . }}://{{ .Values.ingress.host }}{{ .Values.core.path }}
 {{- end }}
 
-{{/* Helper to build the external core host */}}
+{{/* Helper to build the external nanomq host */}}
 {{- define "aiida.nanomq.external-host" -}}
 tcp://{{ .Values.ingress.host }}:{{ .Values.nanomq.stdPortExt }}
 {{- end }}
@@ -64,6 +64,16 @@ tcp://{{ .Values.ingress.host }}:{{ .Values.nanomq.stdPortExt }}
 {{/* Helper to build the internal keycloak host */}}
 {{- define "aiida.keycloak.external-host" -}}
 {{ include "aiida.ingress.protocol" . }}://{{ .Values.ingress.host }}{{ .Values.keycloak.path }}
+{{- end }}
+
+{{/* Helper to build the external core host */}}
+{{- define "aiida.core.internal-host" -}}
+http://{{ .Release.Namespace }}-core:{{ .Values.core.port}}/{{ .Values.core.path }}
+{{- end }}
+
+{{/* Helper to build the internal nanomq host */}}
+{{- define "aiida.nanomq.internal-host" -}}
+tcp://{{ .Release.Name }}-nanomq:{{ .Values.nanomq.stdPort }}
 {{- end }}
 
 {{/* Helper to build the internal keycloak host */}}

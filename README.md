@@ -144,7 +144,8 @@ secrets:
       encryptedUsername: "*?" # Only change during initial installation!
       encryptedPassword: "*?" # Only change during initial installation!
    nanomq:
-      encryptedPwd: "admin:supersafe"
+      encryptedAdminUsername: "mqtt"
+      encryptedAdminPassword: "supersafe"
    teleinfo2mqtt:
       encryptedMqttUsername: "*"
       encryptedMqttPassword: "*"
