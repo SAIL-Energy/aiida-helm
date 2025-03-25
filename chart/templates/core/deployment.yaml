@@ -12,7 +12,8 @@ spec:
     metadata:
     {{- include "aiida.core.labels" . | indent 6 }}
       annotations:
-        checksum/secret: {{ include (print $.Template.BasePath "/core/secret.yaml") . | sha256sum }}
+        checksum/secret-core: {{ include (print $.Template.BasePath "/core/secret.yaml") . | sha256sum }}
+        checksum/secret-nanomq: {{ include (print $.Template.BasePath "/nanomq/secret.yaml") . | sha256sum }}
     spec:
       containers:
         - name: aiida-core
@@ -44,14 +45,26 @@ spec:
               value: {{ .Values.core.streamerPollInterval | quote }}
             - name: AIIDA_EXTERNAL_HOST
               value: "{{ include "aiida.core.external-host" . }}"
-            - name: KEYCLOAK_EXTERNAL_HOST
-              value: "{{ include "aiida.keycloak.external-host" . }}"
-            - name: MQTT_EXTERNAL_HOST
-              value: "{{ include "aiida.nanomq.external-host" . }}"
             - name: KEYCLOAK_INTERNAL_HOST
               value: "{{ include "aiida.keycloak.internal-host" . }}"
+            - name: KEYCLOAK_EXTERNAL_HOST
+              value: "{{ include "aiida.keycloak.external-host" . }}"
             - name: KEYCLOAK_CLIENT_SECRET
               value: "{{ .Values.keycloak.clientSecret }}"
+            - name: MQTT_INTERNAL_HOST
+              value: "{{ include "aiida.nanomq.internal-host" . }}"
+            - name: MQTT_EXTERNAL_HOST
+              value: "{{ include "aiida.nanomq.external-host" . }}"
+            - name: MQTT_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-nanomq-secret
+                  key: adminUsername
+            - name: MQTT_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-nanomq-secret
+                  key: adminPassword
           readinessProbe:
             httpGet:
               path: {{ .Values.core.path }}/actuator/health/readiness

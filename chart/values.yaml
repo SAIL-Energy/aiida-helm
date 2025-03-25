@@ -24,7 +24,8 @@ timescaledb:
 nanomq:
   replicaCount: 1
   version: "latest"
-  encryptedPwd: ""
+  encryptedAdminUsername: ""
+  encryptedAdminPassword: ""
   stdPort: 1883
   sslPort: 8883
   wsPort: 8083
