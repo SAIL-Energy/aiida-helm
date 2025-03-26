@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ .Release.Name }}-pvc
   {{- include "installer.core.labels" . | indent 2 }}
+  annotations:
+    helm.sh/resource-policy: keep
 spec:
   accessModes:
     - ReadWriteOnce
