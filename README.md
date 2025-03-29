@@ -20,6 +20,14 @@ AIIDA Core.
 > **Note:**  
 > The chart is installed via the AIIDA Installer and is **not** meant to be installed manually.
 
+### Test Chart
+
+Only works if Installer already created secrets once.
+
+```bash
+helm upgrade aiida -n aiida --values ./chart/values.yaml --values ./installer/src/data/secrets.yaml ./chart
+```
+
 ---
 
 ## Helm Repository
@@ -116,11 +124,12 @@ Customization options include:
 
 1. **Installer Settings** – Modify parameters for the installer itself, such as the repository track.
 2. **AIIDA Core Settings** – Adjust AIIDA core configurations in the `aiida` section (e.g., change the port).
-3. **Secrets** – Add secrets to the `secrets` section. For example, a `"username:password"` pair can be specified for NanoMQ. If no value is provided, secrets are generated automatically—except for NanoMQ, which remains empty. The following options are available:
+3. **Secrets** – Add secrets to the `secrets` section. For example, a `"admin"` can be specified for NanoMQ. If no value is provided, secrets are generated automatically—except for NanoMQ, which remains empty. The following options are available:
    - **`"*"`** – The secret is automatically generated on every update.
    - **`"*?"`** – The secret is generated only if it has not been stored already.
    - **`""`** – The secret remains empty.
    - **`"MY-SECRET"`** – The secret is set to the specified value.
+4. **IP Address** - Enabling `overrideHostWithIp: true` configures the installer to use the current IP address as the host. The installer checks the IP address every 30 seconds and automatically updates the host of AIIDA Core if the IP changes.
 
 #### **Encryption and Storage**
 - Secrets prefixed with `encrypted` are **sealed and stored in Kubernetes secrets**.
@@ -132,6 +141,7 @@ Customization options include:
 ```yaml
 core:
   repositoryTrack: "stable"
+  overrideHostWithIp: true
 
 aiida:
   core:

@@ -26,6 +26,8 @@ spec:
               value: "{{ .Values.core.repositoryTrack }}"
             - name: SERVICES_NAMESPACE
               value: "{{ .Values.aiidaServices.namespace }}"
+            - name: OVERRIDE_HOST_WITH_IP
+              value: "{{ .Values.core.overrideHostWithIp }}"
           readinessProbe:
             httpGet:
               path: /health

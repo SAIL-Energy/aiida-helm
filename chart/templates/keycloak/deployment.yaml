@@ -12,6 +12,7 @@ spec:
     metadata:
     {{- include "aiida.keycloak.labels" . | indent 6 }}
       annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/keycloak/secret.yaml") . | sha256sum }}
         checksum/configmap-realm: {{ include (print $.Template.BasePath "/keycloak/configmap-realm.yaml") . | sha256sum }}
         checksum/configmap-theme: {{ include (print $.Template.BasePath "/keycloak/configmap-theme.yaml") . | sha256sum }}
     spec:
