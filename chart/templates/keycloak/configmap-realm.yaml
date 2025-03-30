@@ -14,7 +14,7 @@ data:
         {
           "clientId": "AIIDA",
           "enabled": true,
-          "redirectUris": ["{{ include "aiida.core.external-host" . }}*"],
+          "redirectUris": ["*"],
           "publicClient": false,
           "secret": "{{ .Values.keycloak.clientSecret }}",
           "directAccessGrantsEnabled": true
