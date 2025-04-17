@@ -54,6 +54,12 @@ func NewInstaller(repository repo.Entry) *Installer {
 		go aiidaInstaller.startIpAddressUpdater(address)
 	}
 
+	versionInfo, err := aiidaInstaller.InstallOrUpgrade()
+	if err != nil {
+		log.Fatalf("Failed to install or upgrade aiida: %v", err.Error())
+	}
+	log.Printf("Installed or upgraded aiida: %v", versionInfo.InstalledChart.Version)
+
 	return aiidaInstaller
 }
 

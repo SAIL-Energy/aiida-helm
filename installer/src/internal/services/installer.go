@@ -8,6 +8,7 @@ import (
 	helm "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/repo"
+	"os"
 	"strings"
 )
 
@@ -19,7 +20,8 @@ type Installer struct {
 	Namespace  string
 }
 
-func NewInstaller(repository repo.Entry, namespace string) *Installer {
+func NewInstaller(repository repo.Entry) *Installer {
+	namespace := os.Getenv("SERVICES_NAMESPACE")
 	if namespace == "" {
 		namespace = defaultNamespace
 	}

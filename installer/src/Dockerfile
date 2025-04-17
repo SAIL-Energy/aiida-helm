@@ -5,7 +5,7 @@ WORKDIR /src
 COPY . .
 
 RUN go mod download
-RUN go build -o /usr/aiida-installer
+RUN go build -o /usr/aiida-installer ./cmd
 
 FROM alpine:3.21.2
 
