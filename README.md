@@ -95,7 +95,6 @@ bash <(curl -sfL https://eddie-energy.github.io/aiida-helm/setup.bash) --ghcr-us
 ```
 
 ##### Optional flags include:
-- `--namespace` – The namespace to install AIIDA in (default: `aiida`).
 - `--services-namespace` - The namespace to install services in (default: `aiida-services`).
 - `--values` – The path to a custom `values.yaml` file.
 - `--track` – The repository track to use (default: `stable`).
