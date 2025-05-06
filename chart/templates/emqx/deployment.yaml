@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-emqx
+  {{- include "aiida.emqx.labels" . | indent 2 }}
+spec:
+  replicas: {{ .Values.emqx.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-emqx
+  template:
+    metadata:
+    {{- include "aiida.emqx.labels" . | indent 6 }}
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/emqx/configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: emqx
+          image: "emqx/emqx:{{ .Values.emqx.version }}"
+          ports:
+            - name: mqtt-std
+              containerPort: {{ .Values.emqx.stdPort }}
+              protocol: TCP
+            - name: mqtt-ssl
+              containerPort: {{ .Values.emqx.sslPort }}
+              protocol: TCP
+            - name: mqtt-dashboard
+              containerPort: {{ .Values.emqx.dashboardPort }}
+              protocol: TCP
+          env:
+            - name: NANOMQ_HTTP_SERVER_ENABLED
+              value: "true"
+          volumeMounts:
+            - name: emqx-config
+              mountPath: /opt/emqx/etc/base.hocon
+              subPath: emqx.hocon
+          readinessProbe:
+            tcpSocket:
+              port: mqtt-std
+
+      volumes:
+        - name: emqx-config
+          configMap:
+            name: {{ .Release.Name }}-emqx-config

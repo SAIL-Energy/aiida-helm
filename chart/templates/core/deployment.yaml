@@ -13,7 +13,6 @@ spec:
     {{- include "aiida.core.labels" . | indent 6 }}
       annotations:
         checksum/secret-core: {{ include (print $.Template.BasePath "/core/secret.yaml") . | sha256sum }}
-        checksum/secret-nanomq: {{ include (print $.Template.BasePath "/nanomq/secret.yaml") . | sha256sum }}
     spec:
       containers:
         - name: aiida-core
@@ -52,19 +51,9 @@ spec:
             - name: KEYCLOAK_CLIENT_SECRET
               value: "{{ .Values.keycloak.clientSecret }}"
             - name: MQTT_INTERNAL_HOST
-              value: "{{ include "aiida.nanomq.internal-host" . }}"
+              value: "{{ include "aiida.emqx.internal-host" . }}"
             - name: MQTT_EXTERNAL_HOST
-              value: "{{ include "aiida.nanomq.external-host" . }}"
-            - name: MQTT_ADMIN_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-nanomq-secret
-                  key: adminUsername
-            - name: MQTT_ADMIN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-nanomq-secret
-                  key: adminPassword
+              value: "{{ include "aiida.emqx.external-host" . }}"
           readinessProbe:
             httpGet:
               path: {{ .Values.core.path }}/actuator/health/readiness

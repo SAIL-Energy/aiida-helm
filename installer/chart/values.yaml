@@ -20,9 +20,6 @@ secrets:
   timescaledb:
     encryptedUsername: "*?" # Only change during initial installation!
     encryptedPassword: "*?" # Only change during initial installation!
-  nanomq:
-    encryptedAdminUsername: ""
-    encryptedAdminPassword: ""
   teleinfo2mqtt:
     encryptedMqttUsername: "*"
     encryptedMqttPassword: "*"
