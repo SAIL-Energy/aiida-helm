@@ -21,17 +21,15 @@ timescaledb:
   port: 5432
   storageSize: "1Gi"
 
-nanomq:
+emqx:
   replicaCount: 1
   version: "latest"
-  encryptedAdminUsername: ""
-  encryptedAdminPassword: ""
   stdPort: 1883
   sslPort: 8883
-  wsPort: 8083
+  dashboardPort: 18083
   stdPortExt: 1883
   sslPortExt: 8883
-  wsPortExt: 8083
+  dashboardPortExt: 18083
 
 teleinfo2mqtt:
   enabled: false

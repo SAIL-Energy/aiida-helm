@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-emqx-config
+  {{- include "aiida.emqx.labels" . | indent 2 }}
+data:
+  emqx.hocon: |-
+    authentication = [
+      {
+        backend = postgresql
+        database = {{ .Values.timescaledb.database }}
+        disable_prepared_statements = false
+        enable = true
+        mechanism = password_based
+        username = REPLACED_WITH_ENV
+        password = REPLACED_WITH_ENV
+        password_hash_algorithm = { name = plain, salt_position = disable }
+        pool_size = 8
+        query = """
+          SELECT mqtt_password AS password_hash
+          FROM public.data_source
+          WHERE mqtt_username = ${username}
+          LIMIT 1;
+        """
+        server = "{{ .Release.Name }}-timescaledb:5432"
+        ssl {
+          ciphers = [ ]
+          depth = 10
+          enable = false
+          hibernate_after = "5s"
+          log_level = notice
+          reuse_sessions = true
+          secure_renegotiate = true
+          verify = verify_peer
+          versions = [
+            "tlsv1.3",
+            "tlsv1.2"
+          ]
+        }
+      }
+    ]
+    authorization {
+      cache {
+        enable = true
+        excludes = []
+        max_size = 32
+        ttl = "1m"
+      }
+      deny_action = disconnect
+      no_match = deny
+      sources = [
+        {
+          type = postgresql
+          database = {{ .Values.timescaledb.database }}
+          disable_prepared_statements = false
+          enable = true
+          username = REPLACED_WITH_ENV
+          password = REPLACED_WITH_ENV
+          pool_size = 8
+          query = """
+            SELECT LOWER(action) AS action, LOWER(acl_type) AS permission, mqtt_subscribe_topic AS topic
+            FROM public.data_source
+            WHERE mqtt_username = ${username};
+          """
+          server = "{{ .Release.Name }}-timescaledb:5432"
+          ssl {
+            ciphers = []
+            depth = 10
+            enable = false
+            hibernate_after = "5s"
+            log_level = notice
+            reuse_sessions = true
+            secure_renegotiate = true
+            verify = verify_peer
+            versions = [
+              "tlsv1.3",
+              "tlsv1.2"
+            ]
+          }
+        }
+      ]
+    }

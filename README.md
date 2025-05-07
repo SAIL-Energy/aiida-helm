@@ -123,7 +123,7 @@ Customization options include:
 
 1. **Installer Settings** – Modify parameters for the installer itself, such as the repository track.
 2. **AIIDA Core Settings** – Adjust AIIDA core configurations in the `aiida` section (e.g., change the port).
-3. **Secrets** – Add secrets to the `secrets` section. For example, a `"admin"` can be specified for NanoMQ. If no value is provided, secrets are generated automatically—except for NanoMQ, which remains empty. The following options are available:
+3. **Secrets** – Add secrets to the `secrets` section. For example, a fixed token can be specified for the installer. If no value is provided, secrets are generated automatically. The following options are available:
    - **`"*"`** – The secret is automatically generated on every update.
    - **`"*?"`** – The secret is generated only if it has not been stored already.
    - **`""`** – The secret remains empty.
@@ -152,9 +152,6 @@ secrets:
    timescaledb:
       encryptedUsername: "*?" # Only change during initial installation!
       encryptedPassword: "*?" # Only change during initial installation!
-   nanomq:
-      encryptedAdminUsername: "mqtt"
-      encryptedAdminPassword: "supersafe"
    teleinfo2mqtt:
       encryptedMqttUsername: "*"
       encryptedMqttPassword: "*"

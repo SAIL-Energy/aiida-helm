@@ -20,10 +20,10 @@ labels:
 {{- include "aiida.labels" . }}
 {{- end }}
 
-{{/* Metadata for nanomq components */}}
-{{- define "aiida.nanomq.labels" }}
+{{/* Metadata for emqx components */}}
+{{- define "aiida.emqx.labels" }}
 labels:
-  app: {{ .Release.Name }}-nanomq
+  app: {{ .Release.Name }}-emqx
 {{- include "aiida.labels" . }}
 {{- end }}
 
@@ -56,9 +56,9 @@ jdbc:postgresql://{{ .Release.Name }}-timescaledb:{{ .Values.timescaledb.port }}
 {{ include "aiida.ingress.protocol" . }}://{{ .Values.ingress.host }}{{ .Values.core.path }}
 {{- end }}
 
-{{/* Helper to build the external nanomq host */}}
-{{- define "aiida.nanomq.external-host" -}}
-tcp://{{ .Values.ingress.host }}:{{ .Values.nanomq.stdPortExt }}
+{{/* Helper to build the external emqx host */}}
+{{- define "aiida.emqx.external-host" -}}
+tcp://{{ .Values.ingress.host }}:{{ .Values.emqx.stdPortExt }}
 {{- end }}
 
 {{/* Helper to build the internal keycloak host */}}
@@ -71,9 +71,9 @@ tcp://{{ .Values.ingress.host }}:{{ .Values.nanomq.stdPortExt }}
 http://{{ .Release.Namespace }}-core:{{ .Values.core.port}}/{{ .Values.core.path }}
 {{- end }}
 
-{{/* Helper to build the internal nanomq host */}}
-{{- define "aiida.nanomq.internal-host" -}}
-tcp://{{ .Release.Name }}-nanomq:{{ .Values.nanomq.stdPort }}
+{{/* Helper to build the internal emqx host */}}
+{{- define "aiida.emqx.internal-host" -}}
+tcp://{{ .Release.Name }}-emqx:{{ .Values.emqx.stdPort }}
 {{- end }}
 
 {{/* Helper to build the internal keycloak host */}}
