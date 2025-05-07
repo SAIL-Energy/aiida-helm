@@ -28,8 +28,26 @@ spec:
               containerPort: {{ .Values.emqx.dashboardPort }}
               protocol: TCP
           env:
-            - name: NANOMQ_HTTP_SERVER_ENABLED
-              value: "true"
+            - name: EMQX_AUTHENTICATION__1__USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-timescaledb-secret
+                  key: username
+            - name: EMQX_AUTHENTICATION__1__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-timescaledb-secret
+                  key: password
+            - name: EMQX_AUTHORIZATION__SOURCES__1__USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-timescaledb-secret
+                  key: username
+            - name: EMQX_AUTHORIZATION__SOURCES__1__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-timescaledb-secret
+                  key: password
           volumeMounts:
             - name: emqx-config
               mountPath: /opt/emqx/etc/base.hocon
