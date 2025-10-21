@@ -20,6 +20,9 @@ secrets:
   timescaledb:
     encryptedUsername: "*?" # Only change during initial installation!
     encryptedPassword: "*?" # Only change during initial installation!
+  emqx:
+    encryptedSuperuserPassword: "*?" # Only change during initial installation!
+    encryptedDatabasePassword: "*?" # Only change during initial installation!
   teleinfo2mqtt:
     encryptedMqttUsername: "*"
     encryptedMqttPassword: "*"

@@ -10,26 +10,28 @@ core:
   version: "latest"
   port: 8080
   path: "/aiida"
-  streamerPollInterval: "30"
+  encryptedInstallerToken: ""
 
 timescaledb:
   replicaCount: 1
-  version: "latest-pg12"
+  version: "latest-pg17"
   database: "aiida"
-  encryptedUsername: ""
-  encryptedPassword: ""
   port: 5432
   storageSize: "1Gi"
+  encryptedUsername: ""
+  encryptedPassword: ""
 
 emqx:
   replicaCount: 1
-  version: "latest"
+  version: "5.8.6"
   stdPort: 1883
   sslPort: 8883
   dashboardPort: 18083
   stdPortExt: 1883
   sslPortExt: 8883
   dashboardPortExt: 18083
+  encryptedDatabasePassword: ""
+  encryptedSuperuserPassword: ""
 
 teleinfo2mqtt:
   enabled: false
@@ -37,20 +39,19 @@ teleinfo2mqtt:
   version: "latest"
   serial: "/dev/tty4"
   mqttBaseTopic: "teleinfo"
-  encryptedMqttUsername: ""
-  encryptedMqttPassword: ""
   emitInterval: 2
   hassDiscovery: "false"
   ticMode: "history"
   timezone: "Europe/Paris"
+  encryptedMqttUsername: ""
+  encryptedMqttPassword: ""
 
 keycloak:
   replicaCount: 1
-  version: "latest"
+  version: "26.2.1"
   port: 8080
   managementPort: 9000
   path: "/auth"
   clientSecret: ""
   encryptedAdminUsername: ""
   encryptedAdminPassword: ""
-
