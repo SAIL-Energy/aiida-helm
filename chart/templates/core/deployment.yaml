@@ -40,10 +40,12 @@ spec:
                 secretKeyRef:
                   name: {{ .Release.Name }}-core-secret
                   key: installerToken
-            - name: AIIDA_STREAMER_POLL_INTERVAL
-              value: {{ .Values.core.streamerPollInterval | quote }}
             - name: AIIDA_EXTERNAL_HOST
               value: "{{ include "aiida.core.external-host" . }}"
+            - name: VITE_AIIDA_PUBLIC_URL
+              value: "{{ include "aiida.core.external-host" . }}"
+            - name: VITE_KEYCLOAK_URL
+              value: "{{ include "aiida.keycloak.external-host" . }}"
             - name: KEYCLOAK_INTERNAL_HOST
               value: "{{ include "aiida.keycloak.internal-host" . }}"
             - name: KEYCLOAK_EXTERNAL_HOST
@@ -54,6 +56,11 @@ spec:
               value: "{{ include "aiida.emqx.internal-host" . }}"
             - name: MQTT_EXTERNAL_HOST
               value: "{{ include "aiida.emqx.external-host" . }}"
+            - name: MQTT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-emqx-secret
+                  key: superuserPassword
           readinessProbe:
             httpGet:
               path: {{ .Values.core.path }}/actuator/health/readiness
