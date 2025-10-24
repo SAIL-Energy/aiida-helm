@@ -1,5 +1,5 @@
-CHART_PATH?=./installer/chart
-RELEASE_NAME?=aiida-installer
+CHART_PATH?=./chart
+RELEASE_NAME?=aiida
 NAMESPACE?=aiida
 TRACK?=beta
 
@@ -30,3 +30,6 @@ upgrade:
 
 uninstall:
 	helm uninstall -n $(NAMESPACE) $(RELEASE_NAME)
+
+delete-all-pvcs:
+	kubectl delete pvc --all -n $(NAMESPACE)

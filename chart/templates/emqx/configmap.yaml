@@ -18,12 +18,10 @@ data:
           name = bcrypt
         }
         pool_size = 8
-        query = """
-          SELECT mqtt_password AS password_hash
-          FROM public.data_source
-          WHERE mqtt_username = ${username}
-          LIMIT 1;
-        """
+        query = """~
+          SELECT password AS password_hash
+           FROM public.data_source
+           WHERE username = ${username} LIMIT 1;~"""
         server = "{{ .Release.Name }}-timescaledb:5432"
         ssl {
           ciphers = [ ]
@@ -70,11 +68,10 @@ data:
           username = emqx
           password = REPLACED_WITH_ENV
           pool_size = 8
-          query = """
-            SELECT LOWER(action) AS action, LOWER(acl_type) AS permission, mqtt_subscribe_topic AS topic
-            FROM public.data_source
-            WHERE mqtt_username = ${username};
-          """
+          query = """~
+            SELECT LOWER(action), LOWER(acl_type) AS permission, topic
+             FROM public.data_source
+             WHERE username = ${username};~"""
           server = "{{ .Release.Name }}-timescaledb:5432"
           ssl {
             ciphers = []

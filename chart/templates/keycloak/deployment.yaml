@@ -14,7 +14,7 @@ spec:
       annotations:
         checksum/secret: {{ include (print $.Template.BasePath "/keycloak/secret.yaml") . | sha256sum }}
         checksum/configmap-realm: {{ include (print $.Template.BasePath "/keycloak/configmap-realm.yaml") . | sha256sum }}
-        checksum/configmap-theme: {{ include (print $.Template.BasePath "/keycloak/configmap-theme.yaml") . | sha256sum }}
+        checksum/configmap-theme: {{ include (print $.Template.BasePath "/keycloak/configmap-eddie-theme.yaml") . | sha256sum }}
     spec:
       containers:
         - name: keycloak
@@ -63,7 +63,9 @@ spec:
           volumeMounts:
             - name: keycloak-realm-config
               mountPath: /opt/keycloak/data/import/
-            - name: keycloak-theme-config
+            - name: keycloak-aiida-theme-config
+              mountPath: /opt/keycloak/themes/aiida-theme/
+            - name: keycloak-eddie-theme-config
               mountPath: /opt/keycloak/themes/eddie-theme/
           readinessProbe:
             httpGet:
@@ -74,9 +76,21 @@ spec:
         - name: keycloak-realm-config
           configMap:
             name: {{ .Release.Name }}-keycloak-realm-config
-        - name: keycloak-theme-config
+        - name: keycloak-aiida-theme-config
           configMap:
-            name: {{ .Release.Name }}-keycloak-theme-config
+            name: {{ .Release.Name }}-keycloak-aiida-theme-config
+            items:
+              - key: theme.properties
+                path: login/theme.properties
+              - key: custom.css
+                path: login/resources/css/custom.css
+              - key: aiida.svg
+                path: login/resources/images/aiida.svg
+              - key: aiida_brandmark.svg
+                path: login/resources/images/aiida_brandmark.svg
+        - name: keycloak-eddie-theme-config
+          configMap:
+            name: {{ .Release.Name }}-keycloak-eddie-theme-config
             items:
               - key: theme.properties
                 path: login/theme.properties
@@ -84,3 +98,5 @@ spec:
                 path: login/resources/css/styles.css
               - key: eddie.svg
                 path: login/resources/images/eddie.svg
+              - key: eddie_brandmark.svg
+                path: login/resources/images/eddie_brandmark.svg
