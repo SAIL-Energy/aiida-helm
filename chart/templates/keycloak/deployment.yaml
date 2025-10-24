@@ -36,6 +36,8 @@ spec:
               value: "postgres"
             - name: KC_DB_URL
               value: "{{ include "aiida.timescaledb.jdbc-url" . }}"
+            - name: KC_DB_SCHEMA
+              value: "{{ .Values.keycloak.dbSchema }}"
             - name: KC_DB_USERNAME
               valueFrom:
                 secretKeyRef:

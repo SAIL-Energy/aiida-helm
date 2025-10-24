@@ -52,6 +52,7 @@ keycloak:
   port: 8080
   managementPort: 9000
   path: "/auth"
+  dbSchema: "keycloak"
   clientSecret: ""
   encryptedAdminUsername: ""
   encryptedAdminPassword: ""

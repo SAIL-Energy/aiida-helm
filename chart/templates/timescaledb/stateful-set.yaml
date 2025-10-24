@@ -47,8 +47,8 @@ spec:
               mountPath: /docker-entrypoint-initdb.d/00-replace_password_with_env.sh
               subPath: replace-password-with-env.sh
             - name: timescaledb-config
-              mountPath: /tmp/create-emqx-user.sql
-              subPath: create-emqx-user.sql
+              mountPath: /tmp/init-create.sql
+              subPath: init-create.sql
 
           readinessProbe:
             tcpSocket:
