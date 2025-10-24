@@ -15,7 +15,8 @@ data:
           "clientId": "AIIDA",
           "enabled": true,
           "redirectUris": ["*"],
-          "publicClient": false,
+          "webOrigins": ["*"],
+          "publicClient": true,
           "secret": "{{ .Values.keycloak.clientSecret }}",
           "directAccessGrantsEnabled": true
         }
