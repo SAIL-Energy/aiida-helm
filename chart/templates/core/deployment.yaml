@@ -11,8 +11,6 @@ spec:
   template:
     metadata:
     {{- include "aiida.core.labels" . | indent 6 }}
-      annotations:
-        checksum/secret-core: {{ include (print $.Template.BasePath "/core/secret.yaml") . | sha256sum }}
     spec:
       containers:
         - name: aiida-core
@@ -35,11 +33,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Release.Name }}-timescaledb-secret
                   key: password
-            - name: AIIDA_INSTALLER_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-core-secret
-                  key: installerToken
             - name: AIIDA_EXTERNAL_HOST
               value: "{{ include "aiida.core.external-host" . }}"
             - name: VITE_AIIDA_PUBLIC_URL
