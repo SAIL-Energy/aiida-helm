@@ -14,7 +14,7 @@ index:
 install:
 	helm install $(RELEASE_NAME) -n $(NAMESPACE) \
 	--values $(CHART_PATH)/values.yaml \
-	--values installer/src/data/secrets.yaml \
+	--values $(CHART_PATH)/secrets.yaml \
 	$(CHART_PATH)
 
 template:
@@ -25,7 +25,7 @@ template:
 upgrade:
 	helm upgrade -n $(NAMESPACE) $(RELEASE_NAME) \
 	--values $(CHART_PATH)/values.yaml \
-	--values installer/src/data/secrets.yaml \
+	--values $(CHART_PATH)/secrets.yaml \
 	$(CHART_PATH)
 
 uninstall:

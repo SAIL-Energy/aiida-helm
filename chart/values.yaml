@@ -10,7 +10,6 @@ core:
   version: "latest"
   port: 8080
   path: "/aiida"
-  encryptedInstallerToken: ""
 
 timescaledb:
   replicaCount: 1
@@ -53,6 +52,6 @@ keycloak:
   managementPort: 9000
   path: "/auth"
   dbSchema: "keycloak"
-  clientSecret: ""
+  clientSecret: "REPLACE_ME"
   encryptedAdminUsername: ""
   encryptedAdminPassword: ""
