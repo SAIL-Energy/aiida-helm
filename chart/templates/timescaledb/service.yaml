@@ -1,12 +1,15 @@
+{{- if .Values.timescaledb.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-timescaledb
-  {{- include "aiida.timescaledb.labels" . | indent 2 }}
+  name: {{ include "aiida.timescaledb.name" . }}
+  {{- include "aiida.timescaledb.labels" . | nindent 2 }}
 spec:
+  clusterIP: None
   selector:
-    app: {{ .Release.Name }}-timescaledb
+    app: {{ include "aiida.timescaledb.name" . }}
   ports:
     - name: timescaledb
-      port: {{ .Values.timescaledb.port }}
+      port: 5432
       targetPort: timescaledb
+{{- end }}

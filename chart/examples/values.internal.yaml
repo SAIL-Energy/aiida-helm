@@ -1,0 +1,23 @@
+# Internal installation. Copy this file to values.local.yaml for port-forward access.
+# Create the runtime Secret from ../README.md first and replace the Keycloak URL.
+# Keycloak still needs http://localhost:8080 as the client's allowed web origin
+# and http://localhost:8080/* as its redirect URI.
+ingress:
+  enabled: false
+core:
+  publicUrl: http://localhost:8080
+  keystore:
+    existingSecret: aiida-runtime-credentials
+    existingSecretKey: keystorePassword
+
+timescaledb:
+  existingSecret: aiida-runtime-credentials
+
+mqtt:
+  broker: mosquitto
+  existingSecret: aiida-runtime-credentials
+
+keycloak:
+  externalHost: https://keycloak.example.com
+  realm: AIIDA
+  clientId: AIIDA

@@ -1,26 +1,10 @@
+{{- if .Values.timescaledb.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-timescaledb-config
-  {{- include "aiida.timescaledb.labels" . | indent 2 }}
+  name: {{ include "aiida.timescaledb.name" . }}-config
+  {{- include "aiida.timescaledb.labels" . | nindent 2 }}
 data:
-  init-create.sql: |-
-    CREATE SCHEMA keycloak;
-    CREATE USER emqx WITH PASSWORD 'REPLACED_BY_ENV';
-
-  replace-password-with-env.sh: |-
-    #!/bin/sh
-    set -e
-
-    if [ -z "${EMQX_DATABASE_PASSWORD}" ]; then
-      echo "Error: EMQX_DATABASE_PASSWORD environment variable is not set."
-      exit 1
-    fi
-
-    PART_TO_REPLACE="REPLACED_BY_ENV"
-    INIT_CREATE_FILE="/tmp/init-create.sql"
-    BOOTSTRAP_FILE="/tmp/adapted-init-create.sql"
-
-    sed "s|${PART_TO_REPLACE}|${EMQX_DATABASE_PASSWORD}|g" "${INIT_CREATE_FILE}" > "${BOOTSTRAP_FILE}"
-
-    psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f ${BOOTSTRAP_FILE}
+  init-database.sh: |-
+    {{- include "aiida.timescaledb.initialize" . | nindent 4 }}
+{{- end }}

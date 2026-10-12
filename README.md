@@ -1,110 +1,33 @@
-# AIIDA Deployment
+# AIIDA Helm chart
 
-> [!WARNING]
-> This Helm chart is not actively maintained and may not be up to date with the latest AIIDA features or deployment best practices.
+This chart deploys [AIIDA](https://architecture.eddie.energy/aiida/), the EDDIE project's Administrative Interface for In-House Data Access, on Kubernetes. It includes AIIDA core, TimescaleDB, and a choice of Mosquitto or HiveMQ for MQTT. Keycloak is an external prerequisite.
 
-This repository contains all the necessary resources to install/upgrade/delete AIIDA on a Kubernetes cluster.
+FlexiData GmbH developed this chart. The chart is a separate project from the [upstream EDDIE framework](https://github.com/eddie-energy/eddie).
 
-## Repository Components
+**Current chart version: <!-- CHART_VERSION_START -->`1.0.0`<!-- CHART_VERSION_END -->.**
 
-The repository includes the following components:
+[The chart guide](chart/README.md) is the authoritative installation and configuration documentation. It includes an installation using existing Secrets, public access, storage, workload controls, and verification commands. Start there and create a small private values file.
 
-- **Helm chart for AIIDA** - Defines the Kubernetes resources for AIIDA.
-- **Helm repository for AIIDA** - Hosts and manages Helm charts.
+Each component runs as one instance. The default AIIDA image is `v1.52.2`, pinned by digest. The internal example uses port forwarding for the UI; public HTTP requires an ingress controller, DNS, and TLS. External MQTT is disabled by default. Review the configured images and verify the intended application flows before using the deployment for production.
 
----
+| Documentation | Purpose |
+| --- | --- |
+| [Chart guide](chart/README.md) | Install and operate the chart |
+| [Keycloak guide](chart/docs/KEYCLOAK.md) | Configure the external identity provider |
+| [Public MQTT](chart/README.md#mqtt-and-external-devices) | Select a broker and configure public access and certificate renewal |
+| [Database operation](chart/README.md#database-operation) | Configure an external database and understand backup scope |
+| [Release guide](RELEASE.md) | Prepare and publish immutable chart packages |
+| [Contributing](CONTRIBUTING.md) | Report chart issues and propose changes |
+| [Security policy](SECURITY.md) | Report vulnerabilities privately |
 
-## Helm Chart
+Source: [eddie-energy/aiida-helm](https://github.com/eddie-energy/aiida-helm). Follow the source installation in the chart guide. For a published OCI package, use the registry reference announced for that release. The package includes the chart README, examples, and Keycloak guide.
 
-The **Helm chart** is located in the `chart/` directory and contains all required Kubernetes resources for deploying
-AIIDA Core.
+The [AIIDA operation manual](https://architecture.eddie.energy/aiida/) explains application behaviour and supported data sources. This chart supplies Kubernetes configuration. Identity administration, device access, and the complete backup and recovery procedure remain the operator's responsibility.
 
-> [!NOTE]
-> All commands should be executed from the root of this repository.
+The chart was developed by FlexiData GmbH and is distributed under the [Apache License 2.0](LICENSE). The deployed applications and their dependencies retain their own licences. See [NOTICE](NOTICE) for attribution.
 
-### Prerequisites
+[FlexiData GmbH](https://www.flexidata.at)
 
-Before deploying the Helm chart, ensure you have the following prerequisites (K3s, kubectl, ...) installed:
+Hammerschmidtgasse 5, 1190 Vienna, Austria
 
-```bash
-bash <(curl -sfL https://eddie-energy.github.io/aiida-helm/setup.bash)
-```
-
-### Generate Secrets
-
-Secrets are sealed using [Bitnami Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets) to ensure secure storage and management.
-To generate the necessary secrets for the Helm chart, run the following script.
-
-Secrets can be adapted to your needs by modifying the file located at `chart/secrets-template.yaml`.
-
-Before running the script, create a **GitHub Personal Access Token** with the `read:packages` scope.
-
-To execute the script, replace `YOUR_USERNAME` and `YOUR_PERSONAL_ACCESS_TOKEN` with your credentials, then run:
-
-```bash
-bash <(curl -sfL https://eddie-energy.github.io/aiida-helm/setup-secrets.bash) --ghcr-username="YOUR_USERNAME" --ghcr-pat="YOUR_PERSONAL_ACCESS_TOKEN"
-```
-
-### Install local chart for testing
-
-To test changes made to the Helm chart, follow these steps:
-
-1. **Uninstall the existing release**
-
-   Before reinstalling the chart manually, uninstall the chart and delete all persistent volumes:
-
-   ```bash
-   make uninstall
-   make delete-all-pvcs
-   ```
-
-2. **Install the chart manually with Helm**
-
-   Once cleanup is complete, you can install the Helm chart manually:
-    
-   ```bash
-   make install
-   ```
----
-
-### Install AIIDA using Helm
-
-To install AIIDA on your Kubernetes cluster using Helm, run the following command from the root of this repository:
-
-```bash
-helm install aiida \
-  --namespace "$NAMESPACE" \
-  --values ./chart/secrets.yaml \
-  aiida/aiida
-```
-
-## Helm Repository
-
-The **Helm repository** is located in the `repository/` directory and hosts AIIDA's Helm charts. The repository is:
-
-- Hosted on **GitHub Pages**.
-- Automatically updated when changes are pushed to the `main` branch.
-
-### Adding a New Chart/Version to the Repository
-
-To add a new version of the Helm chart, follow these steps:
-
-1. **Package the chart** by running the following command in the root of this repository:
-
-   ```bash
-   make package CHART_PATH=./chart TRACK=stable
-   ```
-   
-   - `CHART_PATH` defines the location of the chart
-   - `TRACK` specifies the release track:
-     - `stable` – For stable releases.
-     - `beta` – For beta releases.
-
-2. **Update the repository index** after packaging:
-
-   ```bash
-   make index TRACK=stable
-   ```
-
-   This updates the `index.yaml` file in the `repository/` directory.
-   The `TRACK` variable determines whether the chart is added to the `stable` or `beta` track.
+[office@flexidata.at](mailto:office@flexidata.at)

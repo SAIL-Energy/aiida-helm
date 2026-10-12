@@ -1,0 +1,123 @@
+{{- if eq (include "aiida.mqtt.broker" .) "mosquitto" }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "aiida.mosquitto.name" . }}
+  {{- include "aiida.mosquitto.labels" . | nindent 2 }}
+spec:
+  serviceName: {{ include "aiida.mqtt.service-name" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "aiida.mosquitto.name" . }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/mosquitto/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/mqtt/secret.yaml") . | sha256sum }}
+      {{- include "aiida.mosquitto.labels" . | nindent 6 }}
+    spec:
+      automountServiceAccountToken: false
+      {{- with .Values.mqtt.mosquitto.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mqtt.mosquitto.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: mosquitto
+          image: {{ include "aiida.image" (dict "image" .Values.mqtt.mosquitto.image) | quote }}
+          imagePullPolicy: {{ .Values.mqtt.mosquitto.image.pullPolicy }}
+          command: ["/usr/bin/tini", "--", "/bin/sh", "/config/start.sh"]
+          {{- with .Values.mqtt.mosquitto.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: mqtt
+              containerPort: 1883
+            {{- if eq (include "aiida.mqtt.tls-enabled" .) "true" }}
+            - name: mqttssl
+              containerPort: 8883
+            {{- end }}
+          startupProbe:
+            tcpSocket:
+              port: mqtt
+            failureThreshold: 30
+            periodSeconds: 2
+          readinessProbe:
+            tcpSocket:
+              port: mqtt
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: mqtt
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.mqtt.resources | nindent 12 }}
+          env:
+            - name: MOSQUITTO_TLS_ENABLED
+              value: {{ include "aiida.mqtt.tls-enabled" . | quote }}
+            - name: AIIDA_MQTT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aiida.mqtt.secret-name" . }}
+                  key: {{ .Values.mqtt.existingSecretKeys.superuserPassword | quote }}
+            - name: MOSQUITTO_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aiida.mqtt.secret-name" . }}
+                  key: {{ .Values.mqtt.existingSecretKeys.databasePassword | quote }}
+          volumeMounts:
+            - name: mosquitto-data
+              mountPath: /var/lib/mosquitto
+            - name: mosquitto-config
+              mountPath: /config
+              readOnly: true
+            - name: temporary-files
+              mountPath: /tmp
+            {{- if .Values.timescaledb.tls.existingSecret }}
+            - name: database-tls
+              mountPath: /etc/database-tls
+              readOnly: true
+            {{- end }}
+            {{- if eq (include "aiida.mqtt.tls-enabled" .) "true" }}
+            - name: mqtt-tls
+              mountPath: /etc/mqtt-tls
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: mosquitto-config
+          configMap:
+            name: {{ include "aiida.mosquitto.name" . }}-config
+            defaultMode: 0555
+        - name: temporary-files
+          emptyDir: {}
+        {{- if .Values.timescaledb.tls.existingSecret }}
+        - name: database-tls
+          secret:
+            secretName: {{ .Values.timescaledb.tls.existingSecret }}
+            items:
+              - key: {{ .Values.timescaledb.tls.caKey | quote }}
+                path: ca.crt
+        {{- end }}
+        {{- if eq (include "aiida.mqtt.tls-enabled" .) "true" }}
+        - name: mqtt-tls
+          secret:
+            secretName: {{ include "aiida.mqtt.tls-secret-name" . }}
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: mosquitto-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.mqtt.persistence.storageClass }}
+        storageClassName: {{ .Values.mqtt.persistence.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.mqtt.persistence.size }}
+{{- end }}

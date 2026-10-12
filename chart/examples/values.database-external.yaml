@@ -1,0 +1,15 @@
+# Merge over your base installation values to use external TimescaleDB on PG17.
+# Provision the aiida database and the required broker role and grants first.
+# See ../README.md for the external database requirements.
+# In the release namespace, create aiida-database-credentials with username and
+# password, and aiida-database-ca with ca.crt containing the trusted public CA.
+# The server certificate must cover postgres.database.example.com.
+timescaledb:
+  enabled: false
+  host: postgres.database.example.com
+  port: 5432
+  existingSecret: aiida-database-credentials
+  sslMode: verify-full
+  tls:
+    existingSecret: aiida-database-ca
+    caKey: ca.crt

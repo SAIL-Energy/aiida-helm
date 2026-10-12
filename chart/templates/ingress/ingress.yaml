@@ -1,38 +1,40 @@
+{{- if .Values.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Release.Name }}-ingress
-  labels:
-    app.kubernetes.io/name: {{ .Release.Name }}-ingress
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-  annotations:
-  {{- if .Values.ingress.tlsEnabled }}
-    cert-manager.io/cluster-issuer: {{ .Release.Name }}-cluster-issuer
+  name: {{ include "aiida.ingress.name" . }}
+  {{- include "aiida.ingress.labels" . | nindent 2 }}
+  {{- $annotations := deepCopy .Values.ingress.annotations }}
+  {{- if and .Values.ingress.tls.enabled .Values.ingress.tls.clusterIssuer (not .Values.ingress.tls.existingSecret) }}
+  {{- $_ := set $annotations "cert-manager.io/cluster-issuer" .Values.ingress.tls.clusterIssuer }}
   {{- end }}
-
+  {{- with $annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . | quote }}
+  {{- end }}
   rules:
-    - http:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
         paths:
-          - path: {{ .Values.keycloak.path }}
+          - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{ .Release.Name }}-keycloak
-                port:
-                  name: keycloak
-          - path: {{ .Values.core.path }}
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ .Release.Name }}-core
+                name: {{ include "aiida.core.name" . }}
                 port:
                   name: core
-{{- if .Values.ingress.tlsEnabled }}
+  {{- if .Values.ingress.tls.enabled }}
   tls:
     - hosts:
-        - {{ .Values.ingress.host }}
-      secretName: {{ .Release.Name }}-tls
+        - {{ .Values.ingress.host | quote }}
+        {{- $mqttHost := include "aiida.mqtt.external-hostname" . }}
+        {{- if and (eq (include "aiida.mqtt.tls-enabled" .) "true") (not .Values.mqtt.externalAccess.tls.existingSecret) (ne $mqttHost .Values.ingress.host) }}
+        - {{ $mqttHost | quote }}
+        {{- end }}
+      secretName: {{ include "aiida.ingress.tls-secret-name" . }}
+  {{- end }}
 {{- end }}

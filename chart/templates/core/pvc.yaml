@@ -1,0 +1,20 @@
+{{- if not .Values.core.persistence.existingClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "aiida.core.pvc-name" . }}
+  {{- include "aiida.core.labels" . | nindent 2 }}
+  {{- if .Values.core.persistence.retain }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.core.persistence.storageClass }}
+  storageClassName: {{ .Values.core.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.core.persistence.size | quote }}
+{{- end }}

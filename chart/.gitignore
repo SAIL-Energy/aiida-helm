@@ -1,0 +1,11 @@
+values.local.yaml
+values.local.*.yaml
+rendered*.yaml
+*.tgz
+*.prov
+*.key
+*.p12
+*.jks
+.env
+.env.*
+!.env.example

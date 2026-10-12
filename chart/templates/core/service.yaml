@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-core
-  {{- include "aiida.core.labels" . | indent 2 }}
+  name: {{ include "aiida.core.name" . }}
+  {{- include "aiida.core.labels" . | nindent 2 }}
 spec:
   selector:
-    app: {{ .Release.Name }}-core
+    app: {{ include "aiida.core.name" . }}
   ports:
     - name: core
-      port: {{ .Values.core.port }}
+      port: 8080
       targetPort: core

@@ -1,0 +1,147 @@
+{{- if .Values.timescaledb.backup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "aiida.timescaledb.name" . }}-backup
+  {{- include "aiida.timescaledb.labels" . | nindent 2 }}
+spec:
+  schedule: {{ .Values.timescaledb.backup.schedule | quote }}
+  timeZone: "Etc/UTC"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: {{ .Values.timescaledb.backup.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.timescaledb.backup.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.timescaledb.backup.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.timescaledb.backup.activeDeadlineSeconds }}
+      template:
+        metadata:
+          labels:
+            app: {{ include "aiida.timescaledb.name" . }}-backup
+            app.kubernetes.io/name: {{ .Chart.Name | quote }}
+            app.kubernetes.io/instance: {{ .Release.Name | quote }}
+            app.kubernetes.io/component: backup
+            app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+          annotations:
+            checksum/backup-config: {{ include (print $.Template.BasePath "/timescaledb/backup-configmap.yaml") . | sha256sum }}
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          {{- with .Values.timescaledb.backup.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- toYaml .Values.timescaledb.backup.podSecurityContext | nindent 12 }}
+          initContainers:
+            - name: database-dump
+              image: {{ include "aiida.image" .Values.timescaledb.backup.dumpImage | quote }}
+              imagePullPolicy: {{ .Values.timescaledb.backup.dumpImage.pullPolicy }}
+              command:
+                - /bin/sh
+                - /runtime/backup-database.sh
+              securityContext:
+                {{- toYaml .Values.timescaledb.backup.securityContext | nindent 16 }}
+              env:
+                - name: DB_HOST
+                  value: {{ include "aiida.timescaledb.host" . | quote }}
+                - name: DB_PORT
+                  value: {{ .Values.timescaledb.port | quote }}
+                - name: PGSSLMODE
+                  value: {{ .Values.timescaledb.sslMode | quote }}
+                {{- if .Values.timescaledb.tls.existingSecret }}
+                - name: PGSSLROOTCERT
+                  value: "/etc/database-tls/ca.crt"
+                {{- end }}
+                - name: DB_NAME
+                  value: {{ include "aiida.timescaledb.database" . | quote }}
+                - name: DB_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "aiida.timescaledb.secret-name" . }}
+                      key: {{ .Values.timescaledb.existingSecretKeys.username | quote }}
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "aiida.timescaledb.secret-name" . }}
+                      key: {{ .Values.timescaledb.existingSecretKeys.password | quote }}
+                - name: BACKUP_NAME
+                  value: {{ .Values.timescaledb.backup.backupName | quote }}
+              resources:
+                {{- toYaml .Values.timescaledb.backup.resources | nindent 16 }}
+              volumeMounts:
+                - name: backup-data
+                  mountPath: /backup
+                - name: backup-runtime
+                  mountPath: /runtime
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+                {{- if .Values.timescaledb.tls.existingSecret }}
+                - name: database-tls
+                  mountPath: /etc/database-tls
+                  readOnly: true
+                {{- end }}
+          containers:
+            - name: backup-upload
+              image: {{ include "aiida.image" .Values.timescaledb.backup.uploadImage | quote }}
+              imagePullPolicy: {{ .Values.timescaledb.backup.uploadImage.pullPolicy }}
+              command:
+                - /bin/sh
+                - /runtime/upload-backup.sh
+              securityContext:
+                {{- toYaml .Values.timescaledb.backup.securityContext | nindent 16 }}
+              env:
+                - name: S3_ENDPOINT
+                  value: {{ .Values.timescaledb.backup.s3.endpoint | quote }}
+                - name: S3_REGION
+                  value: {{ .Values.timescaledb.backup.s3.region | quote }}
+                - name: S3_BUCKET
+                  value: {{ .Values.timescaledb.backup.s3.bucket | quote }}
+                - name: S3_PREFIX
+                  value: {{ .Values.timescaledb.backup.s3.prefix | quote }}
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "aiida.timescaledb.backup-secret-name" . }}
+                      key: {{ .Values.timescaledb.backup.s3.existingSecretKeys.accessKey | quote }}
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "aiida.timescaledb.backup-secret-name" . }}
+                      key: {{ .Values.timescaledb.backup.s3.existingSecretKeys.secretKey | quote }}
+                - name: AWS_DEFAULT_REGION
+                  value: {{ .Values.timescaledb.backup.s3.region | quote }}
+                - name: AWS_EC2_METADATA_DISABLED
+                  value: "true"
+              resources:
+                {{- toYaml .Values.timescaledb.backup.resources | nindent 16 }}
+              volumeMounts:
+                - name: backup-data
+                  mountPath: /backup
+                  readOnly: true
+                - name: backup-runtime
+                  mountPath: /runtime
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: backup-data
+              emptyDir:
+                sizeLimit: {{ .Values.timescaledb.backup.stagingSizeLimit | quote }}
+            - name: backup-runtime
+              configMap:
+                name: {{ include "aiida.timescaledb.name" . }}-backup-config
+                defaultMode: 0444
+            - name: tmp
+              emptyDir:
+                sizeLimit: "128Mi"
+            {{- if .Values.timescaledb.tls.existingSecret }}
+            - name: database-tls
+              secret:
+                secretName: {{ .Values.timescaledb.tls.existingSecret | quote }}
+                items:
+                  - key: {{ .Values.timescaledb.tls.caKey | quote }}
+                    path: ca.crt
+            {{- end }}
+{{- end }}

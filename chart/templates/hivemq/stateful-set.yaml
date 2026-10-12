@@ -1,0 +1,170 @@
+{{- if eq (include "aiida.mqtt.broker" .) "hivemq" }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "aiida.hivemq.name" . }}
+  {{- include "aiida.hivemq.labels" . | nindent 2 }}
+spec:
+  serviceName: {{ include "aiida.mqtt.service-name" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "aiida.hivemq.name" . }}
+  template:
+    metadata:
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/mqtt/secret.yaml") . | sha256sum }}
+      {{- include "aiida.hivemq.labels" . | nindent 6 }}
+    spec:
+      automountServiceAccountToken: false
+      {{- with .Values.mqtt.hivemq.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mqtt.hivemq.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: hivemq
+          image: {{ include "aiida.image" (dict "image" .Values.mqtt.hivemq.image) | quote }}
+          imagePullPolicy: {{ .Values.mqtt.hivemq.image.pullPolicy }}
+          {{- with .Values.mqtt.hivemq.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: mqtt
+              containerPort: 1883
+            {{- if eq (include "aiida.mqtt.tls-enabled" .) "true" }}
+            - name: mqttssl
+              containerPort: 8883
+            {{- end }}
+          startupProbe:
+            tcpSocket:
+              port: mqtt
+            failureThreshold: 30
+            periodSeconds: 2
+          readinessProbe:
+            tcpSocket:
+              port: mqtt
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: mqtt
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.mqtt.resources | nindent 12 }}
+          env:
+            - name: HIVEMQ_ALLOW_ALL_CLIENTS
+              value: "false"
+            - name: HIVEMQ_DB_URL
+              value: {{ include "aiida.timescaledb.jdbc-url" . | quote }}
+            - name: HIVEMQ_DB_USERNAME
+              value: {{ include "aiida.mqtt.database-user" . | quote }}
+            - name: HIVEMQ_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aiida.mqtt.secret-name" . }}
+                  key: {{ .Values.mqtt.existingSecretKeys.databasePassword | quote }}
+            - name: AIIDA_MQTT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aiida.mqtt.secret-name" . }}
+                  key: {{ .Values.mqtt.existingSecretKeys.superuserPassword | quote }}
+            - name: HIVEMQ_DB_POOL_MAX_SIZE
+              value: {{ .Values.mqtt.hivemq.database.poolMaximumSize | int64 | quote }}
+            - name: HIVEMQ_DB_POOL_MIN_IDLE
+              value: {{ .Values.mqtt.hivemq.database.poolMinimumIdle | int64 | quote }}
+            - name: HIVEMQ_DB_CONNECTION_TIMEOUT_MS
+              value: {{ .Values.mqtt.hivemq.database.connectionTimeoutMs | int64 | quote }}
+            - name: HIVEMQ_DB_VALIDATION_TIMEOUT_MS
+              value: {{ .Values.mqtt.hivemq.database.validationTimeoutMs | int64 | quote }}
+            - name: HIVEMQ_DB_IDLE_TIMEOUT_MS
+              value: {{ .Values.mqtt.hivemq.database.idleTimeoutMs | int64 | quote }}
+            - name: HIVEMQ_DB_MAX_LIFETIME_MS
+              value: {{ .Values.mqtt.hivemq.database.maxLifetimeMs | int64 | quote }}
+            - name: HIVEMQ_DB_QUERY_TIMEOUT_SECONDS
+              value: {{ .Values.mqtt.hivemq.database.queryTimeoutSeconds | int64 | quote }}
+            - name: HIVEMQ_PASSWORD_QUERY
+              value: {{ .Values.mqtt.hivemq.queries.password | quote }}
+            - name: HIVEMQ_SUPERUSER_QUERY
+              value: {{ .Values.mqtt.hivemq.queries.superuser | quote }}
+            - name: HIVEMQ_ACL_QUERY
+              value: {{ .Values.mqtt.hivemq.queries.acl | quote }}
+            - name: HIVEMQ_PUBLISH_ACTION
+              value: {{ .Values.mqtt.hivemq.queries.publishAction | quote }}
+            - name: HIVEMQ_SUBSCRIBE_ACTION
+              value: {{ .Values.mqtt.hivemq.queries.subscribeAction | quote }}
+            - name: HIVEMQ_CACHE_ENABLED
+              value: {{ .Values.mqtt.cache.enabled | quote }}
+            - name: HIVEMQ_AUTH_CACHE_SECONDS
+              value: {{ .Values.mqtt.cache.authSeconds | int64 | quote }}
+            - name: HIVEMQ_ACL_CACHE_SECONDS
+              value: {{ .Values.mqtt.cache.aclSeconds | int64 | quote }}
+            - name: HIVEMQ_AUTH_CACHE_JITTER_SECONDS
+              value: {{ .Values.mqtt.cache.authJitterSeconds | int64 | quote }}
+            - name: HIVEMQ_ACL_CACHE_JITTER_SECONDS
+              value: {{ .Values.mqtt.cache.aclJitterSeconds | int64 | quote }}
+            - name: HIVEMQ_CACHE_MAXIMUM_ENTRIES
+              value: {{ .Values.mqtt.hivemq.cacheMaximumEntries | int64 | quote }}
+            - name: HIVEMQ_LOCAL_SUPERUSER_ENABLED
+              value: "true"
+            - name: HIVEMQ_LOCAL_SUPERUSER_USERNAME
+              value: "aiida"
+            - name: HIVEMQ_AUTH_CALLBACK_TIMEOUT_MS
+              value: {{ .Values.mqtt.hivemq.callbackTimeoutMs | int64 | quote }}
+            - name: HIVEMQ_MAXIMUM_USERNAME_BYTES
+              value: {{ .Values.mqtt.hivemq.maximumUsernameBytes | int64 | quote }}
+            - name: HIVEMQ_MAXIMUM_PASSWORD_BYTES
+              value: {{ .Values.mqtt.hivemq.maximumPasswordBytes | int64 | quote }}
+            - name: HIVEMQ_MAX_CONNECTIONS
+              value: {{ .Values.mqtt.hivemq.maxConnections | int64 | quote }}
+            - name: HIVEMQ_MAX_QUEUED_MESSAGES
+              value: {{ .Values.mqtt.hivemq.maxQueuedMessages | int64 | quote }}
+            - name: HIVEMQ_TLS_ENABLED
+              value: {{ include "aiida.mqtt.tls-enabled" . | quote }}
+          volumeMounts:
+            - name: hivemq-data
+              mountPath: /opt/hivemq/data
+            - name: temporary-files
+              mountPath: /tmp
+            {{- if .Values.timescaledb.tls.existingSecret }}
+            - name: database-tls
+              mountPath: /etc/database-tls
+              readOnly: true
+            {{- end }}
+            {{- if eq (include "aiida.mqtt.tls-enabled" .) "true" }}
+            - name: mqtt-tls
+              mountPath: /etc/mqtt-tls
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: temporary-files
+          emptyDir: {}
+        {{- if .Values.timescaledb.tls.existingSecret }}
+        - name: database-tls
+          secret:
+            secretName: {{ .Values.timescaledb.tls.existingSecret }}
+            items:
+              - key: {{ .Values.timescaledb.tls.caKey | quote }}
+                path: ca.crt
+        {{- end }}
+        {{- if eq (include "aiida.mqtt.tls-enabled" .) "true" }}
+        - name: mqtt-tls
+          secret:
+            secretName: {{ include "aiida.mqtt.tls-secret-name" . }}
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: hivemq-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.mqtt.persistence.storageClass }}
+        storageClassName: {{ .Values.mqtt.persistence.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.mqtt.persistence.size }}
+{{- end }}

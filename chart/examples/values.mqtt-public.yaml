@@ -1,0 +1,12 @@
+# Merge over your base installation values for remote MQTT clients.
+# Create aiida-mqtt-tls in the release namespace with tls.crt and tls.key.
+# Its certificate must cover mqtt.aiida.example.com. See ../README.md.
+# Point that hostname at the broker LoadBalancer after installation.
+mqtt:
+  externalAccess:
+    enabled: true
+    host: mqtt.aiida.example.com
+    allowPlaintext: false
+    tls:
+      enabled: true
+      existingSecret: aiida-mqtt-tls
