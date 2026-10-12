@@ -1,0 +1,113 @@
+{{- if .Values.timescaledb.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "aiida.timescaledb.name" . }}
+  {{- include "aiida.timescaledb.labels" . | nindent 2 }}
+spec:
+  # This embedded PostgreSQL instance does not implement replication.
+  replicas: 1
+  serviceName: {{ include "aiida.timescaledb.name" . }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  selector:
+    matchLabels:
+      app: {{ include "aiida.timescaledb.name" . }}
+  template:
+    metadata:
+      {{- include "aiida.timescaledb.labels" . | nindent 6 }}
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/timescaledb/configmap.yaml") . | sha256sum }}
+        checksum/database-secret: {{ include (print $.Template.BasePath "/timescaledb/secret.yaml") . | sha256sum }}
+        checksum/mqtt-secret: {{ include (print $.Template.BasePath "/mqtt/secret.yaml") . | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      {{- with .Values.timescaledb.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.timescaledb.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: timescaledb
+          image: {{ include "aiida.image" .Values.timescaledb.image | quote }}
+          imagePullPolicy: {{ .Values.timescaledb.image.pullPolicy }}
+          {{- with .Values.timescaledb.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args:
+            - postgres
+            - -c
+            - max_connections={{ .Values.timescaledb.maxConnections }}
+          ports:
+            - name: timescaledb
+              containerPort: 5432
+          resources:
+            {{- toYaml .Values.timescaledb.resources | nindent 12 }}
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: POSTGRES_DB
+              value: {{ include "aiida.timescaledb.database" . | quote }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aiida.timescaledb.secret-name" . }}
+                  key: {{ .Values.timescaledb.existingSecretKeys.username | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aiida.timescaledb.secret-name" . }}
+                  key: {{ .Values.timescaledb.existingSecretKeys.password | quote }}
+            - name: MQTT_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aiida.mqtt.secret-name" . }}
+                  key: {{ .Values.mqtt.existingSecretKeys.databasePassword | quote }}
+          volumeMounts:
+            - name: timescaledb-data
+              mountPath: /var/lib/postgresql/data
+            - name: timescaledb-config
+              mountPath: /docker-entrypoint-initdb.d/00-init-broker.sh
+              subPath: init-database.sh
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - 'exec pg_isready --host=127.0.0.1 --port=5432 --username="$POSTGRES_USER" --dbname="$POSTGRES_DB"'
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - 'exec pg_isready --host=127.0.0.1 --port=5432 --username="$POSTGRES_USER" --dbname="$POSTGRES_DB"'
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+      volumes:
+        - name: timescaledb-config
+          configMap:
+            name: {{ include "aiida.timescaledb.name" . }}-config
+            defaultMode: 0555
+  volumeClaimTemplates:
+    - metadata:
+        name: timescaledb-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- if .Values.timescaledb.storageClass }}
+        storageClassName: {{ .Values.timescaledb.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.timescaledb.storageSize | quote }}
+{{- end }}

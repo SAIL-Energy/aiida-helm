@@ -1,0 +1,22 @@
+apiVersion: v2
+name: aiida
+description: Deploy AIIDA (Administrative Interface for In-House Data Access)
+home: https://github.com/eddie-energy/aiida-helm
+sources:
+  - https://github.com/eddie-energy/aiida-helm
+  - https://github.com/eddie-energy/eddie/tree/v1.52.2/aiida
+keywords:
+  - aiida
+  - eddie
+  - energy
+  - mqtt
+  - timescaledb
+kubeVersion: ">=1.27.0-0"
+annotations:
+  artifacthub.io/license: Apache-2.0
+  flexidata.at/developed-by: FlexiData GmbH
+  flexidata.at/developer-url: "https://www.flexidata.at"
+  flexidata.at/contact: office@flexidata.at
+type: application
+version: 1.0.0
+appVersion: "1.52.2"

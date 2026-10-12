@@ -1,0 +1,15 @@
+.idea/
+.vscode/
+*.tgz
+*.prov
+dist/
+rendered*.yaml
+values.local.yaml
+values.local.*.yaml
+*-runtime-secret.yaml
+*.key
+*.p12
+*.jks
+.env
+.env.*
+!.env.example

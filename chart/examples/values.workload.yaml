@@ -1,0 +1,30 @@
+# Optional resource overrides, not a sizing preset. Tune for your workload.
+# Merge over your base installation values after configuring the existing
+# runtime Secret as described in ../README.md. No extra Secret is required.
+# From the repository root: -f values.local.yaml -f chart/examples/values.workload.yaml
+core:
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: "2"
+
+timescaledb:
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: "2"
+
+mqtt:
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 200m
+    limits:
+      memory: 2Gi
+      cpu: "1"

@@ -1,0 +1,53 @@
+{{- if eq (include "aiida.mqtt.broker" .) "mosquitto" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aiida.mosquitto.name" . }}-config
+  {{- include "aiida.mosquitto.labels" . | nindent 2 }}
+data:
+  mosquitto.conf: |-
+    listener 1883 0.0.0.0
+    {{- if eq (include "aiida.mqtt.tls-enabled" .) "true" }}
+    listener 8883 0.0.0.0
+    certfile /etc/mqtt-tls/tls.crt
+    keyfile /etc/mqtt-tls/tls.key
+    {{- end }}
+    allow_anonymous false
+    max_connections {{ .Values.mqtt.mosquitto.maxConnections }}
+    max_queued_messages {{ .Values.mqtt.mosquitto.maxQueuedMessages }}
+    max_queued_bytes {{ .Values.mqtt.mosquitto.maxQueuedBytes }}
+
+    persistence true
+    persistence_location /var/lib/mosquitto/
+
+    auth_plugin /mosquitto/go-auth.so
+    auth_opt_backends files,postgres
+    auth_opt_exhaust_backend_first true
+    auth_opt_hasher bcrypt
+    auth_opt_cache {{ .Values.mqtt.cache.enabled }}
+    auth_opt_cache_reset {{ .Values.mqtt.cache.reset }}
+    auth_opt_cache_refresh {{ .Values.mqtt.cache.refresh }}
+    auth_opt_auth_cache_seconds {{ .Values.mqtt.cache.authSeconds }}
+    auth_opt_acl_cache_seconds {{ .Values.mqtt.cache.aclSeconds }}
+    auth_opt_auth_jitter_seconds {{ .Values.mqtt.cache.authJitterSeconds }}
+    auth_opt_acl_jitter_seconds {{ .Values.mqtt.cache.aclJitterSeconds }}
+    auth_opt_log_level info
+
+    auth_opt_files_password_path /tmp/mosquitto-passwords
+    auth_opt_files_acl_path /tmp/mosquitto-acls
+
+    auth_opt_pg_host {{ include "aiida.timescaledb.host" . }}
+    auth_opt_pg_port {{ .Values.timescaledb.port }}
+    auth_opt_pg_user {{ include "aiida.mqtt.database-user" . }}
+    auth_opt_pg_password
+    auth_opt_pg_dbname {{ include "aiida.timescaledb.database" . }}
+    auth_opt_pg_sslmode {{ .Values.timescaledb.sslMode }}
+    {{- if .Values.timescaledb.tls.existingSecret }}
+    auth_opt_pg_sslrootcert /etc/database-tls/ca.crt
+    {{- end }}
+    auth_opt_pg_userquery SELECT password FROM public.data_source_mqtt_user WHERE username = $1 LIMIT 1
+    auth_opt_pg_superquery SELECT 0
+    auth_opt_pg_aclquery SELECT topic FROM public.data_source_mqtt_acl WHERE username = $1 AND acl_type = 'ALLOW' AND (action = 'ALL' OR ($2 = 2 AND action = 'PUBLISH') OR ($2 IN (1,4) AND action = 'SUBSCRIBE'))
+  start.sh: |
+    {{- include "aiida.mosquitto.start" . | nindent 4 }}
+{{- end }}

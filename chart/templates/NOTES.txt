@@ -1,0 +1,20 @@
+AIIDA: {{ include "aiida.core.external-host" . }}
+
+Sign in through your configured Keycloak provider and verify a data source.
+Check the workloads and persistent claims:
+
+  kubectl --namespace {{ .Release.Namespace }} get pods,pvc,svc,ingress
+
+{{- if .Values.mqtt.externalAccess.enabled }}
+
+External MQTT: {{ include "aiida.mqtt.external-host" . }}
+Verify DNS, the served certificate, and authorized publish/subscribe traffic.
+{{- else }}
+
+External MQTT is disabled. Configure mqtt.externalAccess before connecting
+devices outside the cluster.
+{{- end }}
+
+Preserve the core volume and keystore password together with database backups.
+The packaged README.md describes configuration, database backup scope, and
+retained resources. docs/KEYCLOAK.md describes identity provider configuration.

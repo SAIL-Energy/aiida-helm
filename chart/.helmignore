@@ -1,0 +1,19 @@
+# Local configuration and generated output must not enter a release archive.
+values.local.yaml
+values.local.*.yaml
+rendered*.yaml
+*-runtime-secret.yaml
+*.tgz
+*.prov
+*.key
+*.p12
+*.jks
+.env
+.env.*
+.gitignore
+.git/
+.idea/
+.vscode/
+*.swp
+*.bak
+*~

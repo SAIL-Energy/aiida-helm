@@ -1,0 +1,327 @@
+# Start with the installation guide in README.md and use existing Secrets.
+# Each component runs as a single instance. This chart does not configure HA.
+ingress:
+  # enabled creates HTTP Ingress; disable for private or port-forward access.
+  enabled: true
+  # className identifies your installed ingress controller.
+  className: traefik
+  # host is required with ingress enabled, for example aiida.example.com.
+  host: ""
+  # annotations adds ingress-controller-specific settings.
+  annotations: {}
+  tls:
+    # enabled serves HTTPS through the ingress controller.
+    enabled: true
+    # clusterIssuer names an existing cert-manager ClusterIssuer.
+    clusterIssuer: letsencrypt-prod
+    # existingSecret supplies tls.crt/key instead of cert-manager.
+    existingSecret: ""
+core:
+  image:
+    # repository and tag identify the supported public AIIDA release.
+    repository: ghcr.io/eddie-energy/aiida
+    tag: v1.52.2
+    # digest takes precedence over tag and fixes the exact image.
+    digest: sha256:bcd5a1afe1ddca93a43851d64e0f7cca225cc31517704664ec6237a2c91d2fc9
+    pullPolicy: IfNotPresent
+  # imagePullSecrets lists existing registry credentials when needed.
+  imagePullSecrets: []
+  # publicUrl is required without ingress, for example http://localhost:8080.
+  publicUrl: ""
+  keystore:
+    # password is a development fallback. Prefer an existing Secret.
+    password: ""
+    # existingSecret contains the password protecting the persistent keystore.
+    existingSecret: ""
+    existingSecretKey: password
+  persistence:
+    # existingClaim uses an existing claim rather than creating a new one.
+    existingClaim: ""
+    # size covers both keystore and outbound MQTT persistence.
+    size: 1Gi
+    # storageClass: empty selects the cluster default.
+    storageClass: ""
+    # retain keeps the claim and chart-created keystore Secret on uninstall.
+    retain: true
+  # tmpSizeLimit bounds a separate writable temporary volume.
+  tmpSizeLimit: 512Mi
+  # podSecurityContext sets container identity and persistent file ownership.
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  # securityContext disables container privilege escalation.
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: [ALL]
+  # resources uses normal Kubernetes requests and limits.
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 200m
+      ephemeral-storage: 50Mi
+    limits:
+      memory: 2Gi
+      cpu: "1"
+      ephemeral-storage: 1Gi
+
+timescaledb:
+  # enabled runs one bundled database; disable for an external TimescaleDB.
+  enabled: true
+  # host is required only for an external database.
+  host: ""
+  # port selects an external port; the bundled database uses 5432.
+  port: 5432
+  # sslMode configures external database TLS; use verify-full with a trusted CA.
+  # The bundled database supports disable only.
+  sslMode: disable
+  tls:
+    # existingSecret supplies the external database's public CA certificate.
+    existingSecret: ""
+    caKey: ca.crt
+  # username/password create a development fallback credentials Secret.
+  username: ""
+  password: ""
+  # existingSecret supplies the application/bootstrap credentials instead.
+  existingSecret: ""
+  existingSecretKeys:
+    username: username
+    password: password
+  image:
+    # repository is the public Alpine TimescaleDB image for PostgreSQL 17.
+    repository: timescale/timescaledb
+    tag: 2.30.2-pg17
+    # digest fixes the exact image independently of registry tag changes.
+    digest: sha256:b346edcdb51a1fd6020e3965e0bd1c9f3406fa6d5fbce1e28f4852587ef934e2
+    pullPolicy: IfNotPresent
+  imagePullSecrets: []
+  # storageSize and storageClass configure the database claim.
+  storageSize: 10Gi
+  storageClass: ""
+  # maxConnections sets PostgreSQL's concurrent connection limit.
+  maxConnections: 100
+  # podSecurityContext uses the Alpine PostgreSQL uid/gid (70).
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 70
+    runAsGroup: 70
+    fsGroup: 70
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: [ALL]
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 200m
+      ephemeral-storage: 50Mi
+    limits:
+      memory: 2Gi
+      cpu: "1"
+      ephemeral-storage: 1Gi
+  backup:
+    # enabled schedules DATABASE-ONLY logical backups to S3. Full recovery also
+    # needs the core volume and keystore password. See README.md, Database operation.
+    enabled: false
+    # schedule is interpreted in UTC.
+    schedule: "0 2 * * *"
+    # backupName prefixes timestamped, compressed PostgreSQL custom-format dumps.
+    backupName: aiida-database
+    # stagingSizeLimit bounds temporary dump storage.
+    stagingSizeLimit: 4Gi
+    activeDeadlineSeconds: 1800
+    backoffLimit: 1
+    successfulJobsHistoryLimit: 1
+    failedJobsHistoryLimit: 3
+    imagePullSecrets: []
+    dumpImage:
+      # dumpImage must provide pg_dump 17 and a POSIX shell.
+      repository: postgres
+      tag: 17.11-alpine
+      digest: sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+      pullPolicy: IfNotPresent
+    uploadImage:
+      # uploadImage must provide the AWS CLI and a POSIX shell.
+      repository: amazon/aws-cli
+      tag: 2.37.13
+      digest: sha256:d32864c20087d486f5988c3e70817d67a73f584a47535cada9ad97e0ea1e5196
+      pullPolicy: IfNotPresent
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 10001
+      runAsGroup: 10001
+      fsGroup: 10001
+      seccompProfile:
+        type: RuntimeDefault
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: [ALL]
+    # resources applies to each backup container.
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+        ephemeral-storage: 50Mi
+      limits:
+        memory: 512Mi
+        cpu: 500m
+        ephemeral-storage: 5Gi
+    s3:
+      # endpoint: empty uses AWS S3; otherwise use an HTTPS S3-compatible endpoint.
+      endpoint: ""
+      region: ""
+      bucket: ""
+      # prefix selects the folder-like object key prefix.
+      prefix: backups/aiida
+      # accessKey/secretKey are development fallbacks.
+      accessKey: ""
+      secretKey: ""
+      existingSecret: ""
+      existingSecretKeys:
+        accessKey: accessKey
+        secretKey: secretKey
+
+mqtt:
+  # broker selects mosquitto or hivemq with its AIIDA authentication plugin.
+  # EMQX is not supported as a broker.
+  broker: mosquitto
+  # superuserPassword is a development fallback for the aiida MQTT user.
+  superuserPassword: ""
+  db:
+    # password authenticates the fixed PostgreSQL broker account named emqx.
+    password: ""
+  # existingSecret supplies MQTT administrator and database passwords.
+  existingSecret: ""
+  existingSecretKeys:
+    superuserPassword: mqttPassword
+    databasePassword: databasePassword
+  externalAccess:
+    # enabled opts in to a public LoadBalancer Service.
+    enabled: false
+    # host defaults to ingress.host; the certificate must cover this hostname.
+    host: ""
+    # allowPlaintext additionally exposes unencrypted port 1883 publicly.
+    allowPlaintext: false
+    # loadBalancerIP is a provider-dependent optional static IPv4 request.
+    loadBalancerIP: ""
+    annotations: {}
+    # loadBalancerSourceRanges optionally restricts client CIDRs at the provider.
+    loadBalancerSourceRanges: []
+    tls:
+      # enabled exposes TLS port 8883 when external access is enabled.
+      enabled: true
+      # existingSecret contains tls.crt/key; empty reuses the HTTP TLS Secret.
+      existingSecret: ""
+  cache:
+    # enabled controls authentication and authorization caching.
+    enabled: true
+    # reset clears Mosquitto caches at startup; refresh renews active entries.
+    reset: true
+    refresh: true
+    # authSeconds/aclSeconds are cache lifetimes; zero is allowed.
+    authSeconds: 300
+    aclSeconds: 300
+    # authJitterSeconds/aclJitterSeconds spread expiration times.
+    authJitterSeconds: 15
+    aclJitterSeconds: 15
+  mosquitto:
+    image:
+      repository: ghcr.io/lhns/mosquitto-go-auth
+      tag: 3.5.0-mosquitto_2.1.2
+      digest: sha256:2f36798a940c978dd53b9530545e25d5f3ede08292d5fb87b451b5acaf9a2946
+      pullPolicy: IfNotPresent
+    # imagePullSecrets supports an authenticated mirror of the broker image.
+    imagePullSecrets: []
+    # maxQueuedMessages/maxQueuedBytes bound queues; zero disables byte limiting.
+    maxQueuedMessages: 200000
+    maxQueuedBytes: 0
+    # maxConnections uses -1 for unlimited connections.
+    maxConnections: -1
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1883
+      runAsGroup: 1883
+      fsGroup: 1883
+      fsGroupChangePolicy: OnRootMismatch
+      seccompProfile:
+        type: RuntimeDefault
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: [ALL]
+  hivemq:
+    # image includes HiveMQ and the AIIDA PostgreSQL authentication plugin.
+    image:
+      repository: ghcr.io/eddie-energy/hivemq-auth-plugin
+      tag: sha-d085114
+      digest: ""
+      pullPolicy: IfNotPresent
+    # nodeSelector matches the architecture published for the HiveMQ image.
+    nodeSelector:
+      kubernetes.io/arch: amd64
+    maxConnections: -1
+    maxQueuedMessages: 200000
+    cacheMaximumEntries: 10000
+    callbackTimeoutMs: 5000
+    maximumUsernameBytes: 1024
+    maximumPasswordBytes: 4096
+    database:
+      poolMaximumSize: 4
+      poolMinimumIdle: 0
+      connectionTimeoutMs: 3000
+      validationTimeoutMs: 2000
+      idleTimeoutMs: 600000
+      maxLifetimeMs: 1800000
+      queryTimeoutSeconds: 3
+    queries:
+      password: "SELECT password FROM public.data_source_mqtt_user WHERE username = ? LIMIT 1"
+      superuser: "SELECT count(*) FROM public.data_source_mqtt_user WHERE username = ? AND false"
+      acl: "SELECT topic FROM public.data_source_mqtt_acl WHERE username = ? AND acl_type = 'ALLOW' AND (action = 'ALL' OR action = ?)"
+      publishAction: PUBLISH
+      subscribeAction: SUBSCRIBE
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 10000
+      runAsGroup: 0
+      fsGroup: 0
+      fsGroupChangePolicy: OnRootMismatch
+      seccompProfile:
+        type: RuntimeDefault
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+  persistence:
+    # size requests persistent broker storage; empty storageClass uses default.
+    size: 1Gi
+    storageClass: ""
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+      ephemeral-storage: 50Mi
+    limits:
+      memory: 1Gi
+      cpu: "1"
+      ephemeral-storage: 512Mi
+
+keycloak:
+  # externalHost is the public base URL, without /realms/<realm>.
+  externalHost: ""
+  # internalHost optionally uses a separate URL for retrieving signing keys.
+  internalHost: ""
+  # realm/clientId identify an existing public OpenID Connect client.
+  realm: AIIDA
+  clientId: AIIDA

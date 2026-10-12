@@ -1,0 +1,12 @@
+{{- if .Values.timescaledb.backup.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aiida.timescaledb.name" . }}-backup-config
+  {{- include "aiida.timescaledb.labels" . | nindent 2 }}
+data:
+  backup-database.sh: |-
+    {{- include "aiida.timescaledb.dump" . | nindent 4 }}
+  upload-backup.sh: |-
+    {{- include "aiida.timescaledb.upload" . | nindent 4 }}
+{{- end }}

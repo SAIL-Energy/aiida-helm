@@ -1,0 +1,180 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aiida.core.name" . }}
+  {{- include "aiida.core.labels" . | nindent 2 }}
+spec:
+  # AIIDA owns in-process data source adapters and a file-backed keystore.
+  # Stop the old instance before another instance opens the same files.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ include "aiida.core.name" . }}
+  template:
+    metadata:
+      {{- include "aiida.core.labels" . | nindent 6 }}
+      annotations:
+        checksum/keystore-secret: {{ include (print $.Template.BasePath "/core/keystore-secret.yaml") . | sha256sum }}
+        checksum/database-secret: {{ include (print $.Template.BasePath "/timescaledb/secret.yaml") . | sha256sum }}
+        checksum/mqtt-secret: {{ include (print $.Template.BasePath "/mqtt/secret.yaml") . | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      {{- with .Values.core.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.core.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: prepare-core-storage
+          image: {{ include "aiida.image" .Values.core.image | quote }}
+          imagePullPolicy: {{ .Values.core.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              umask 077
+              mkdir -p /core-data/security /core-data/mqtt-persistence
+              chmod 700 /core-data/security /core-data/mqtt-persistence
+          securityContext:
+            {{- toYaml .Values.core.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.core.resources | nindent 12 }}
+          volumeMounts:
+            - name: core-data
+              mountPath: /core-data
+      containers:
+        - name: aiida-core
+          image: {{ include "aiida.image" .Values.core.image | quote }}
+          imagePullPolicy: {{ .Values.core.image.pullPolicy }}
+          # Official images use Jib and leave their working directory unset.
+          # AIIDA's relative outbound MQTT persistence must resolve to this PVC.
+          workingDir: /opt
+          securityContext:
+            {{- toYaml .Values.core.securityContext | nindent 12 }}
+          ports:
+            - containerPort: 8080
+              name: core
+          resources:
+            {{- toYaml .Values.core.resources | nindent 12 }}
+          env:
+            - name: SERVER_PORT
+              value: "8080"
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+              value: "health"
+            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+              value: "true"
+            - name: MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS
+              value: "never"
+            - name: MANAGEMENT_ENDPOINT_HEALTH_SHOW_COMPONENTS
+              value: "never"
+            - name: SPRING_DATASOURCE_URL
+              value: {{ include "aiida.timescaledb.jdbc-url" . | quote }}
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aiida.timescaledb.secret-name" . }}
+                  key: {{ .Values.timescaledb.existingSecretKeys.username | quote }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aiida.timescaledb.secret-name" . }}
+                  key: {{ .Values.timescaledb.existingSecretKeys.password | quote }}
+            - name: KEYSTORE_PATH
+              value: "/opt/security/secrets.jks"
+            - name: KEYSTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aiida.core.keystore-secret-name" . }}
+                  key: {{ .Values.core.keystore.existingSecretKey | quote }}
+            - name: AIIDA_EXTERNAL_HOST
+              value: {{ include "aiida.core.external-host" . | quote }}
+            - name: AIIDA_CORS_ALLOWED_ORIGINS
+              value: {{ include "aiida.core.external-host" . | quote }}
+            - name: KEYCLOAK_REALM
+              value: {{ .Values.keycloak.realm | quote }}
+            - name: KEYCLOAK_CLIENT
+              value: {{ .Values.keycloak.clientId | quote }}
+            - name: KEYCLOAK_INTERNAL_HOST
+              value: {{ include "aiida.keycloak.internal-host" . | quote }}
+            - name: KEYCLOAK_EXTERNAL_HOST
+              value: {{ include "aiida.keycloak.external-host" . | quote }}
+            - name: MQTT_INTERNAL_HOST
+              value: {{ include "aiida.mqtt.internal-host" . | quote }}
+            - name: MQTT_EXTERNAL_HOST
+              value: {{ include "aiida.mqtt.external-host" . | quote }}
+            - name: MQTT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aiida.mqtt.secret-name" . }}
+                  key: {{ .Values.mqtt.existingSecretKeys.superuserPassword | quote }}
+            {{- if eq (include "aiida.mqtt.tls-enabled" .) "true" }}
+            - name: MQTT_TLS_CERTIFICATE_PATH
+              value: "/etc/mqtt-tls/tls.crt"
+            {{- end }}
+          volumeMounts:
+            - name: core-data
+              mountPath: /opt/security
+              subPath: security
+            - name: core-data
+              mountPath: /opt/mqtt-persistence
+              subPath: mqtt-persistence
+            - name: tmp
+              mountPath: /tmp
+            {{- if .Values.timescaledb.tls.existingSecret }}
+            - name: database-tls
+              mountPath: /etc/database-tls
+              readOnly: true
+            {{- end }}
+            {{- if eq (include "aiida.mqtt.tls-enabled" .) "true" }}
+            - name: mqtt-tls
+              mountPath: /etc/mqtt-tls
+              readOnly: true
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: core
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: core
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: core
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 120
+      volumes:
+        - name: core-data
+          persistentVolumeClaim:
+            claimName: {{ include "aiida.core.pvc-name" . }}
+        - name: tmp
+          emptyDir:
+            sizeLimit: {{ .Values.core.tmpSizeLimit | quote }}
+        {{- if .Values.timescaledb.tls.existingSecret }}
+        - name: database-tls
+          secret:
+            secretName: {{ .Values.timescaledb.tls.existingSecret | quote }}
+            items:
+              - key: {{ .Values.timescaledb.tls.caKey | quote }}
+                path: ca.crt
+        {{- end }}
+        {{- if eq (include "aiida.mqtt.tls-enabled" .) "true" }}
+        - name: mqtt-tls
+          secret:
+            secretName: {{ include "aiida.mqtt.tls-secret-name" . }}
+            items:
+              - key: tls.crt
+                path: tls.crt
+        {{- end }}

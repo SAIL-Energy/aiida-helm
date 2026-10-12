@@ -1,0 +1,15 @@
+AIIDA Helm chart
+
+Developed by FlexiData GmbH.
+Website: https://www.flexidata.at
+Email: office@flexidata.at
+Hammerschmidtgasse 5
+1190 Vienna, Austria
+
+The chart is distributed under the Apache License, Version 2.0.
+AIIDA and the components installed by this chart retain their own
+copyright notices and licences.
+
+AIIDA is developed by the EDDIE project and its contributors.
+Upstream project: https://github.com/eddie-energy/eddie
+Upstream documentation: https://architecture.eddie.energy/aiida/

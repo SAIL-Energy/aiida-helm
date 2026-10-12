@@ -1,0 +1,1199 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AIIDA chart configuration",
+  "description": "Single-instance AIIDA deployment. See README.md for credentials, storage, and access configuration.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "ingress": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "className": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^(|[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*)$"
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "tls": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "clusterIssuer": {
+              "type": "string",
+              "maxLength": 253,
+              "pattern": "^(|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$"
+            },
+            "existingSecret": {
+              "type": "string",
+              "maxLength": 253,
+              "pattern": "^(|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$"
+            }
+          },
+          "required": [
+            "enabled",
+            "clusterIssuer",
+            "existingSecret"
+          ]
+        }
+      },
+      "required": [
+        "enabled",
+        "className",
+        "host",
+        "annotations",
+        "tls"
+      ]
+    },
+    "core": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "image": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "repository": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tag": {
+              "type": "string"
+            },
+            "digest": {
+              "type": "string",
+              "pattern": "^(|sha256:[a-f0-9]{64})$"
+            },
+            "pullPolicy": {
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            }
+          },
+          "required": [
+            "repository",
+            "tag",
+            "digest",
+            "pullPolicy"
+          ]
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        "publicUrl": {
+          "type": "string",
+          "pattern": "^(|https?://[^/?#\\s]+/?)$"
+        },
+        "keystore": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "password": {
+              "type": "string",
+              "pattern": "^[^\\r\\n]*$",
+              "description": "Prefer an existing Secret. Plaintext values are stored in Helm release metadata."
+            },
+            "existingSecret": {
+              "type": "string",
+              "maxLength": 253,
+              "pattern": "^(|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$"
+            },
+            "existingSecretKey": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9._-]+$"
+            }
+          },
+          "required": [
+            "password",
+            "existingSecret",
+            "existingSecretKey"
+          ]
+        },
+        "persistence": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "existingClaim": {
+              "type": "string",
+              "maxLength": 253,
+              "pattern": "^(|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$"
+            },
+            "size": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*(?:[KMGTPE]i?|[kmgtpe])?$"
+            },
+            "storageClass": {
+              "type": "string",
+              "maxLength": 253,
+              "pattern": "^(|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$"
+            },
+            "retain": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "existingClaim",
+            "size",
+            "storageClass",
+            "retain"
+          ]
+        },
+        "tmpSizeLimit": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*(?:[KMGTPE]i?|[kmgtpe])?$"
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "securityContext": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+|[numkKMGTPE]|[KMGTPE]i)?$"
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+|[numkKMGTPE]|[KMGTPE]i)?$"
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "requests",
+            "limits"
+          ]
+        }
+      },
+      "required": [
+        "image",
+        "imagePullSecrets",
+        "publicUrl",
+        "keystore",
+        "persistence",
+        "tmpSizeLimit",
+        "podSecurityContext",
+        "securityContext",
+        "resources"
+      ]
+    },
+    "timescaledb": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "host": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^(|[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*)$"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "username": {
+          "type": "string",
+          "pattern": "^[^\\r\\n]*$",
+          "description": "Prefer an existing Secret. Plaintext values are stored in Helm release metadata."
+        },
+        "password": {
+          "type": "string",
+          "pattern": "^[^\\r\\n]*$",
+          "description": "Prefer an existing Secret. Plaintext values are stored in Helm release metadata."
+        },
+        "existingSecret": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^(|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$"
+        },
+        "existingSecretKeys": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "username": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9._-]+$"
+            },
+            "password": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9._-]+$"
+            }
+          },
+          "required": [
+            "username",
+            "password"
+          ]
+        },
+        "image": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "repository": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tag": {
+              "type": "string"
+            },
+            "digest": {
+              "type": "string",
+              "pattern": "^(|sha256:[a-f0-9]{64})$"
+            },
+            "pullPolicy": {
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            }
+          },
+          "required": [
+            "repository",
+            "tag",
+            "digest",
+            "pullPolicy"
+          ]
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        "storageSize": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*(?:[KMGTPE]i?|[kmgtpe])?$"
+        },
+        "storageClass": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^(|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$"
+        },
+        "maxConnections": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "podSecurityContext": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "securityContext": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+|[numkKMGTPE]|[KMGTPE]i)?$"
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+|[numkKMGTPE]|[KMGTPE]i)?$"
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "requests",
+            "limits"
+          ]
+        },
+        "backup": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "schedule": {
+              "type": "string",
+              "minLength": 1
+            },
+            "backupName": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,62}$"
+            },
+            "stagingSizeLimit": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*(?:[KMGTPE]i?|[kmgtpe])?$"
+            },
+            "activeDeadlineSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "backoffLimit": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "successfulJobsHistoryLimit": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "failedJobsHistoryLimit": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "imagePullSecrets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            },
+            "dumpImage": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "repository": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "tag": {
+                  "type": "string"
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^(|sha256:[a-f0-9]{64})$"
+                },
+                "pullPolicy": {
+                  "enum": [
+                    "Always",
+                    "IfNotPresent",
+                    "Never"
+                  ]
+                }
+              },
+              "required": [
+                "repository",
+                "tag",
+                "digest",
+                "pullPolicy"
+              ]
+            },
+            "uploadImage": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "repository": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "tag": {
+                  "type": "string"
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^(|sha256:[a-f0-9]{64})$"
+                },
+                "pullPolicy": {
+                  "enum": [
+                    "Always",
+                    "IfNotPresent",
+                    "Never"
+                  ]
+                }
+              },
+              "required": [
+                "repository",
+                "tag",
+                "digest",
+                "pullPolicy"
+              ]
+            },
+            "podSecurityContext": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "securityContext": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "resources": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "requests": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+|[numkKMGTPE]|[KMGTPE]i)?$"
+                      },
+                      {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    ]
+                  }
+                },
+                "limits": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+|[numkKMGTPE]|[KMGTPE]i)?$"
+                      },
+                      {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "requests",
+                "limits"
+              ]
+            },
+            "s3": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "endpoint": {
+                  "type": "string",
+                  "pattern": "^(|https://[^\\s?#]+)$"
+                },
+                "region": {
+                  "type": "string"
+                },
+                "bucket": {
+                  "type": "string"
+                },
+                "prefix": {
+                  "type": "string",
+                  "pattern": "^[^\\r\\n]*$"
+                },
+                "accessKey": {
+                  "type": "string",
+                  "pattern": "^[^\\r\\n]*$",
+                  "description": "Prefer an existing Secret. Plaintext values are stored in Helm release metadata."
+                },
+                "secretKey": {
+                  "type": "string",
+                  "pattern": "^[^\\r\\n]*$",
+                  "description": "Prefer an existing Secret. Plaintext values are stored in Helm release metadata."
+                },
+                "existingSecret": {
+                  "type": "string",
+                  "maxLength": 253,
+                  "pattern": "^(|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$"
+                },
+                "existingSecretKeys": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "accessKey": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[A-Za-z0-9._-]+$"
+                    },
+                    "secretKey": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[A-Za-z0-9._-]+$"
+                    }
+                  },
+                  "required": [
+                    "accessKey",
+                    "secretKey"
+                  ]
+                }
+              },
+              "required": [
+                "endpoint",
+                "region",
+                "bucket",
+                "prefix",
+                "accessKey",
+                "secretKey",
+                "existingSecret",
+                "existingSecretKeys"
+              ]
+            }
+          },
+          "required": [
+            "enabled",
+            "schedule",
+            "backupName",
+            "stagingSizeLimit",
+            "activeDeadlineSeconds",
+            "backoffLimit",
+            "successfulJobsHistoryLimit",
+            "failedJobsHistoryLimit",
+            "imagePullSecrets",
+            "dumpImage",
+            "uploadImage",
+            "podSecurityContext",
+            "securityContext",
+            "resources",
+            "s3"
+          ]
+        },
+        "sslMode": {
+          "enum": [
+            "disable",
+            "require",
+            "verify-ca",
+            "verify-full"
+          ]
+        },
+        "tls": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "existingSecret",
+            "caKey"
+          ],
+          "properties": {
+            "existingSecret": {
+              "type": "string",
+              "maxLength": 253,
+              "pattern": "^(|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$"
+            },
+            "caKey": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9._-]+$"
+            }
+          }
+        }
+      },
+      "required": [
+        "enabled",
+        "host",
+        "port",
+        "username",
+        "password",
+        "existingSecret",
+        "existingSecretKeys",
+        "image",
+        "imagePullSecrets",
+        "storageSize",
+        "storageClass",
+        "maxConnections",
+        "podSecurityContext",
+        "securityContext",
+        "resources",
+        "backup",
+        "sslMode",
+        "tls"
+      ]
+    },
+    "mqtt": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "broker": {
+          "enum": [
+            "mosquitto",
+            "hivemq"
+          ]
+        },
+        "superuserPassword": {
+          "type": "string",
+          "pattern": "^[^\\r\\n]*$",
+          "description": "Prefer an existing Secret. Plaintext values are stored in Helm release metadata."
+        },
+        "db": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "password": {
+              "type": "string",
+              "pattern": "^[^\\r\\n]*$",
+              "description": "Password with no CR/LF characters; prefer an existing Secret."
+            }
+          },
+          "required": [
+            "password"
+          ]
+        },
+        "existingSecret": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^(|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$"
+        },
+        "existingSecretKeys": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "superuserPassword": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9._-]+$"
+            },
+            "databasePassword": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9._-]+$"
+            }
+          },
+          "required": [
+            "superuserPassword",
+            "databasePassword"
+          ]
+        },
+        "externalAccess": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "host": {
+              "type": "string",
+              "maxLength": 253,
+              "pattern": "^(|[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*)$"
+            },
+            "allowPlaintext": {
+              "type": "boolean"
+            },
+            "loadBalancerIP": {
+              "type": "string",
+              "pattern": "^(|(?:[0-9]{1,3}\\.){3}[0-9]{1,3})$"
+            },
+            "annotations": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "loadBalancerSourceRanges": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 3,
+                "pattern": "^[0-9a-fA-F:.]+/[0-9]{1,3}$"
+              }
+            },
+            "tls": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "existingSecret": {
+                  "type": "string",
+                  "maxLength": 253,
+                  "pattern": "^(|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$"
+                }
+              },
+              "required": [
+                "enabled",
+                "existingSecret"
+              ]
+            }
+          },
+          "required": [
+            "enabled",
+            "host",
+            "allowPlaintext",
+            "loadBalancerIP",
+            "annotations",
+            "loadBalancerSourceRanges",
+            "tls"
+          ]
+        },
+        "cache": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "reset": {
+              "type": "boolean"
+            },
+            "refresh": {
+              "type": "boolean"
+            },
+            "authSeconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "aclSeconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "authJitterSeconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "aclJitterSeconds": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "enabled",
+            "reset",
+            "refresh",
+            "authSeconds",
+            "aclSeconds",
+            "authJitterSeconds",
+            "aclJitterSeconds"
+          ]
+        },
+        "mosquitto": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "image": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "repository": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "tag": {
+                  "type": "string"
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^(|sha256:[a-f0-9]{64})$"
+                },
+                "pullPolicy": {
+                  "enum": [
+                    "Always",
+                    "IfNotPresent",
+                    "Never"
+                  ]
+                }
+              },
+              "required": [
+                "repository",
+                "tag",
+                "digest",
+                "pullPolicy"
+              ]
+            },
+            "maxQueuedMessages": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "maxQueuedBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "maxConnections": {
+              "type": "integer",
+              "minimum": -1
+            },
+            "podSecurityContext": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "securityContext": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "imagePullSecrets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          },
+          "required": [
+            "image",
+            "maxQueuedMessages",
+            "maxQueuedBytes",
+            "maxConnections",
+            "podSecurityContext",
+            "securityContext",
+            "imagePullSecrets"
+          ]
+        },
+        "hivemq": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "image": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "repository": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "tag": {
+                  "type": "string"
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^(|sha256:[a-f0-9]{64})$"
+                },
+                "pullPolicy": {
+                  "enum": [
+                    "Always",
+                    "IfNotPresent",
+                    "Never"
+                  ]
+                }
+              },
+              "required": [
+                "repository",
+                "tag",
+                "digest",
+                "pullPolicy"
+              ]
+            },
+            "maxConnections": {
+              "type": "integer",
+              "minimum": -1
+            },
+            "maxQueuedMessages": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "cacheMaximumEntries": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "callbackTimeoutMs": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maximumUsernameBytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maximumPasswordBytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "database": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "poolMaximumSize": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "poolMinimumIdle": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "connectionTimeoutMs": {
+                  "type": "integer",
+                  "minimum": 250
+                },
+                "validationTimeoutMs": {
+                  "type": "integer",
+                  "minimum": 250
+                },
+                "idleTimeoutMs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "maxLifetimeMs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "queryTimeoutSeconds": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "poolMaximumSize",
+                "poolMinimumIdle",
+                "connectionTimeoutMs",
+                "validationTimeoutMs",
+                "idleTimeoutMs",
+                "maxLifetimeMs",
+                "queryTimeoutSeconds"
+              ]
+            },
+            "queries": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "password": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "superuser": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "acl": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "publishAction": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "subscribeAction": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "password",
+                "superuser",
+                "acl",
+                "publishAction",
+                "subscribeAction"
+              ]
+            },
+            "podSecurityContext": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "securityContext": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "nodeSelector": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "image",
+            "maxConnections",
+            "maxQueuedMessages",
+            "cacheMaximumEntries",
+            "callbackTimeoutMs",
+            "maximumUsernameBytes",
+            "maximumPasswordBytes",
+            "database",
+            "queries",
+            "podSecurityContext",
+            "securityContext",
+            "nodeSelector"
+          ]
+        },
+        "persistence": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "size": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*(?:[KMGTPE]i?|[kmgtpe])?$"
+            },
+            "storageClass": {
+              "type": "string",
+              "maxLength": 253,
+              "pattern": "^(|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$"
+            }
+          },
+          "required": [
+            "size",
+            "storageClass"
+          ]
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+|[numkKMGTPE]|[KMGTPE]i)?$"
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                ]
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+|[numkKMGTPE]|[KMGTPE]i)?$"
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "requests",
+            "limits"
+          ]
+        }
+      },
+      "required": [
+        "broker",
+        "superuserPassword",
+        "db",
+        "existingSecret",
+        "existingSecretKeys",
+        "externalAccess",
+        "cache",
+        "mosquitto",
+        "hivemq",
+        "persistence",
+        "resources"
+      ]
+    },
+    "keycloak": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "externalHost": {
+          "type": "string",
+          "pattern": "^(|https?://[^\\s?#]+)$"
+        },
+        "internalHost": {
+          "type": "string",
+          "pattern": "^(|https?://[^\\s?#]+)$"
+        },
+        "realm": {
+          "type": "string",
+          "minLength": 1
+        },
+        "clientId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "externalHost",
+        "internalHost",
+        "realm",
+        "clientId"
+      ]
+    }
+  },
+  "required": [
+    "ingress",
+    "core",
+    "timescaledb",
+    "mqtt",
+    "keycloak"
+  ]
+}

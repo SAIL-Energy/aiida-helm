@@ -1,0 +1,22 @@
+# Public HTTP installation. Copy this file to values.local.yaml and replace the hostnames.
+# First create aiida-runtime-credentials in the aiida namespace as described
+# in ../README.md. No credentials belong in this values file.
+ingress:
+  host: aiida.example.com
+
+core:
+  keystore:
+    existingSecret: aiida-runtime-credentials
+    existingSecretKey: keystorePassword
+
+timescaledb:
+  existingSecret: aiida-runtime-credentials
+
+mqtt:
+  broker: mosquitto
+  existingSecret: aiida-runtime-credentials
+
+keycloak:
+  externalHost: https://keycloak.example.com
+  realm: AIIDA
+  clientId: AIIDA

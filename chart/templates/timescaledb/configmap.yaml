@@ -1,0 +1,10 @@
+{{- if .Values.timescaledb.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aiida.timescaledb.name" . }}-config
+  {{- include "aiida.timescaledb.labels" . | nindent 2 }}
+data:
+  init-database.sh: |-
+    {{- include "aiida.timescaledb.initialize" . | nindent 4 }}
+{{- end }}

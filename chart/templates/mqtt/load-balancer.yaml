@@ -1,0 +1,39 @@
+{{- if .Values.mqtt.externalAccess.enabled }}
+{{- if and (not .Values.mqtt.externalAccess.tls.enabled) (not .Values.mqtt.externalAccess.allowPlaintext) }}
+{{- fail "mqtt.externalAccess requires TLS or explicit allowPlaintext: true" }}
+{{- end }}
+{{- $broker := include "aiida.mqtt.broker" . -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aiida.mqtt.load-balancer-name" . }}
+  {{- with .Values.mqtt.externalAccess.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- include "aiida.mqtt.labels" . | nindent 2 }}
+spec:
+  type: LoadBalancer
+  {{- with .Values.mqtt.externalAccess.loadBalancerIP }}
+  loadBalancerIP: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.mqtt.externalAccess.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    app: {{ include (printf "aiida.%s.name" $broker) . }}
+  ports:
+    {{- if .Values.mqtt.externalAccess.allowPlaintext }}
+    - name: mqtt
+      port: 1883
+      protocol: TCP
+      targetPort: mqtt
+    {{- end }}
+    {{- if eq (include "aiida.mqtt.tls-enabled" .) "true" }}
+    - name: mqttssl
+      port: 8883
+      protocol: TCP
+      targetPort: mqttssl
+    {{- end }}
+{{- end }}
