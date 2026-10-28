@@ -8,7 +8,7 @@ FlexiData GmbH developed this chart as a separate project from the [EDDIE framew
 
 | Component | Chart default or requirement |
 | --- | --- |
-| Chart | `1.0.0` |
+| Chart | `1.1.0` |
 | AIIDA core | `v1.52.2`, pinned by digest |
 | Kubernetes | `1.27` or later |
 | Helm | `3.18` or later |
@@ -125,14 +125,14 @@ Inspect resource names, images, Secret references, PVCs, and public endpoints be
 The package includes its examples and Keycloak guide. Install a local package with:
 
 ```sh
-helm upgrade --install aiida ./aiida-1.0.0.tgz --namespace aiida \
+helm upgrade --install aiida ./aiida-1.1.0.tgz --namespace aiida \
   -f values.local.yaml --wait --timeout 10m
 ```
 
 For an announced OCI release, set `CHART_REF` to its complete registry reference and select the version explicitly:
 
 ```sh
-helm upgrade --install aiida "$CHART_REF" --version 1.0.0 \
+helm upgrade --install aiida "$CHART_REF" --version 1.1.0 \
   --namespace aiida -f values.local.yaml --wait --timeout 10m
 ```
 
@@ -189,6 +189,17 @@ kubectl get clusterissuer letsencrypt-prod
 
 To use an existing certificate instead, set `ingress.tls.clusterIssuer: ""` and `ingress.tls.existingSecret` to a `kubernetes.io/tls` Secret containing `tls.crt` and `tls.key`. cert-manager is then unnecessary for this ingress.
 
+To serve AIIDA under a sub-path, set `ingress.subPath: /apps/aiida`
+(or `/aiida`). It defaults to empty, serving at `/`. The value must start with
+`/` and have no trailing slash. The chart uses it for the ingress prefix,
+Spring Boot’s `SERVER_SERVLET_CONTEXT_PATH` and health probes; configure your ingress controller to
+preserve this prefix without rewriting it. For example, the UI is then available
+at `https://aiida.example.com/apps/aiida`. Update the Keycloak redirect URI to
+`https://aiida.example.com/apps/aiida/*`; the web origin stays
+`https://aiida.example.com`. Without ingress, keep `core.publicUrl` set to the
+origin (for example `http://localhost:8080`) and append the context path when
+opening the UI or checking health endpoints.
+
 ### MQTT and external devices
 
 Enable external MQTT only when devices outside the cluster need it. Merge [the public MQTT example](examples/values.mqtt-public.yaml) over your installation values:
@@ -227,7 +238,7 @@ The internal and public HTTP examples are complete base configurations. Merge ov
 
 | Setting | Behaviour |
 | --- | --- |
-| Application URL | Derived from ingress when enabled; otherwise `core.publicUrl` is required |
+| Application URL | `AIIDA_PUBLIC_URL` is built from the ingress scheme, host, and `ingress.subPath`; otherwise set `core.publicUrl` |
 | MQTT public hostname | `mqtt.externalAccess.host`, then `ingress.host` |
 | MQTT TLS Secret | `mqtt.externalAccess.tls.existingSecret`, then the effective web TLS Secret |
 | Database connection | Bundled TimescaleDB, or `timescaledb.host` and `port` when disabled |

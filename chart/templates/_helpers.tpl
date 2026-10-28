@@ -111,6 +111,14 @@ jdbc:postgresql://{{ include "aiida.timescaledb.host" . }}:{{ .Values.timescaled
 {{- required "core.publicUrl is required when ingress.enabled=false" .Values.core.publicUrl | trimSuffix "/" -}}
 {{- end -}}
 {{- end -}}
+{{/* Public application URL includes the ingress path; CORS uses the origin above. */}}
+{{- define "aiida.core.public-url" -}}
+{{- if .Values.ingress.enabled -}}
+{{- printf "%s%s" (include "aiida.core.external-host" .) (default "" .Values.ingress.subPath) -}}
+{{- else -}}
+{{- required "core.publicUrl is required when ingress.enabled=false" .Values.core.publicUrl | trimSuffix "/" -}}
+{{- end -}}
+{{- end -}}
 {{- define "aiida.ingress.tls-secret-name" -}}
 {{- default (printf "%s-tls" (include "aiida.component-name" (dict "root" . "component" "web"))) .Values.ingress.tls.existingSecret -}}
 {{- end -}}

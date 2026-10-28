@@ -61,6 +61,10 @@ spec:
           resources:
             {{- toYaml .Values.core.resources | nindent 12 }}
           env:
+            {{- with .Values.ingress.subPath }}
+            - name: SERVER_SERVLET_CONTEXT_PATH
+              value: {{ . | quote }}
+            {{- end }}
             - name: SERVER_PORT
               value: "8080"
             - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
@@ -90,6 +94,8 @@ spec:
                 secretKeyRef:
                   name: {{ include "aiida.core.keystore-secret-name" . }}
                   key: {{ .Values.core.keystore.existingSecretKey | quote }}
+            - name: AIIDA_PUBLIC_URL
+              value: {{ include "aiida.core.public-url" . | quote }}
             - name: AIIDA_EXTERNAL_HOST
               value: {{ include "aiida.core.external-host" . | quote }}
             - name: AIIDA_CORS_ALLOWED_ORIGINS
@@ -136,21 +142,21 @@ spec:
             {{- end }}
           readinessProbe:
             httpGet:
-              path: /actuator/health/readiness
+              path: {{ printf "%s/actuator/health/readiness" (default "" .Values.ingress.subPath) | quote }}
               port: core
             periodSeconds: 10
             timeoutSeconds: 2
             failureThreshold: 6
           livenessProbe:
             httpGet:
-              path: /actuator/health/liveness
+              path: {{ printf "%s/actuator/health/liveness" (default "" .Values.ingress.subPath) | quote }}
               port: core
             periodSeconds: 10
             timeoutSeconds: 2
             failureThreshold: 3
           startupProbe:
             httpGet:
-              path: /actuator/health/liveness
+              path: {{ printf "%s/actuator/health/liveness" (default "" .Values.ingress.subPath) | quote }}
               port: core
             periodSeconds: 5
             timeoutSeconds: 2

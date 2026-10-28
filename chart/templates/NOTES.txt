@@ -1,4 +1,4 @@
-AIIDA: {{ include "aiida.core.external-host" . }}
+AIIDA: {{ include "aiida.core.public-url" . }}
 
 Sign in through your configured Keycloak provider and verify a data source.
 Check the workloads and persistent claims:

@@ -20,6 +20,11 @@
           "maxLength": 253,
           "pattern": "^(|[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*)$"
         },
+        "subPath": {
+          "type": "string",
+          "pattern": "^(|(/[A-Za-z0-9_-]+(?:[.][A-Za-z0-9_-]+)*)+)$",
+          "description": "Optional AIIDA context path, such as /aiida or /apps/aiida, without a trailing slash. Empty serves at /."
+        },
         "annotations": {
           "type": "object",
           "additionalProperties": {

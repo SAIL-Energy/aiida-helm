@@ -7,6 +7,9 @@ ingress:
   className: traefik
   # host is required with ingress enabled, for example aiida.example.com.
   host: ""
+  # subPath optionally serves AIIDA under a path, for example /aiida.
+  # Leave empty to serve at /. Use no trailing slash.
+  subPath: ""
   # annotations adds ingress-controller-specific settings.
   annotations: {}
   tls:
