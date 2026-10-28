@@ -8,7 +8,7 @@ FlexiData GmbH developed this chart as a separate project from the [EDDIE framew
 
 | Component | Chart default or requirement |
 | --- | --- |
-| Chart | `1.1.0` |
+| Chart | `1.1.3` |
 | AIIDA core | `v1.52.2`, pinned by digest |
 | Kubernetes | `1.27` or later |
 | Helm | `3.18` or later |
@@ -125,14 +125,14 @@ Inspect resource names, images, Secret references, PVCs, and public endpoints be
 The package includes its examples and Keycloak guide. Install a local package with:
 
 ```sh
-helm upgrade --install aiida ./aiida-1.1.0.tgz --namespace aiida \
+helm upgrade --install aiida ./aiida-1.1.3.tgz --namespace aiida \
   -f values.local.yaml --wait --timeout 10m
 ```
 
 For an announced OCI release, set `CHART_REF` to its complete registry reference and select the version explicitly:
 
 ```sh
-helm upgrade --install aiida "$CHART_REF" --version 1.1.0 \
+helm upgrade --install aiida "$CHART_REF" --version 1.1.3 \
   --namespace aiida -f values.local.yaml --wait --timeout 10m
 ```
 
@@ -298,6 +298,22 @@ These backups cover the database only. Complete recovery also needs the matching
 These defaults are starting points. Adjust CPU, memory, storage, and broker limits for the expected workload. Resources use standard Kubernetes `requests` and `limits`; see [the workload example](examples/values.workload.yaml). Storage expansion depends on the provider and controller.
 
 AIIDA runs as user and group 10001, with a read-only root filesystem, dropped capabilities, and a separate writable temporary volume. Core uses a `Recreate` update strategy so two instances do not write its persistent files at once. Other components use image-specific identities and permissions. HiveMQ needs writable image paths and an AMD64 node; do not copy another component's security context without checking image compatibility.
+
+Configure health endpoints and their response content with:
+
+```yaml
+core:
+  health:
+    enabled: true
+    showDetails: never
+    showComponents: never
+```
+
+`showDetails` and `showComponents` accept `never`, `when_authorized`, or `always`.
+Set them to `always` to include details and components in health responses.
+Setting `enabled: false` excludes health endpoints from HTTP exposure and removes
+all three Kubernetes HTTP health probes. Defaults keep health endpoints and probes
+enabled while hiding details and components.
 
 Core uses health probes; broker TCP probes check listener availability. Readiness does not verify Keycloak login, database privileges, topic authorization, or complete recovery. Registry credentials are unnecessary for the configured public images, including the supplied HiveMQ image.
 

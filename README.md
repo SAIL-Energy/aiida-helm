@@ -4,7 +4,7 @@ This chart deploys [AIIDA](https://architecture.eddie.energy/aiida/), the EDDIE 
 
 FlexiData GmbH developed this chart. The chart is a separate project from the [upstream EDDIE framework](https://github.com/eddie-energy/eddie).
 
-**Current chart version: <!-- CHART_VERSION_START -->`1.1.0`<!-- CHART_VERSION_END -->.**
+**Current chart version: <!-- CHART_VERSION_START -->`1.1.3`<!-- CHART_VERSION_END -->.**
 
 [The chart guide](chart/README.md) is the authoritative installation and configuration documentation. It includes an installation using existing Secrets, public access, storage, workload controls, and verification commands. Start there and create a small private values file.
 

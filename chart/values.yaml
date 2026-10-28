@@ -20,6 +20,12 @@ ingress:
     # existingSecret supplies tls.crt/key instead of cert-manager.
     existingSecret: ""
 core:
+  health:
+    # enabled exposes health endpoints and enables Kubernetes HTTP health probes.
+    enabled: true
+    # showDetails/showComponents accept never, when_authorized, or always.
+    showDetails: never
+    showComponents: never
   image:
     # repository and tag identify the supported public AIIDA release.
     repository: ghcr.io/eddie-energy/aiida

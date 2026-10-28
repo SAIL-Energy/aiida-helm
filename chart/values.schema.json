@@ -68,6 +68,16 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "health": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "showDetails": { "enum": ["never", "when_authorized", "always"] },
+            "showComponents": { "enum": ["never", "when_authorized", "always"] }
+          },
+          "required": ["enabled", "showDetails", "showComponents"]
+        },
         "image": {
           "type": "object",
           "additionalProperties": false,

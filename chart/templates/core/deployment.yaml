@@ -69,12 +69,14 @@ spec:
               value: "8080"
             - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
               value: "health"
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_EXCLUDE
+              value: {{ ternary "" "health" .Values.core.health.enabled | quote }}
             - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
-              value: "true"
+              value: {{ .Values.core.health.enabled | quote }}
             - name: MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS
-              value: "never"
+              value: {{ .Values.core.health.showDetails | quote }}
             - name: MANAGEMENT_ENDPOINT_HEALTH_SHOW_COMPONENTS
-              value: "never"
+              value: {{ .Values.core.health.showComponents | quote }}
             - name: SPRING_DATASOURCE_URL
               value: {{ include "aiida.timescaledb.jdbc-url" . | quote }}
             - name: SPRING_DATASOURCE_USERNAME
@@ -140,6 +142,7 @@ spec:
               mountPath: /etc/mqtt-tls
               readOnly: true
             {{- end }}
+          {{- if .Values.core.health.enabled }}
           readinessProbe:
             httpGet:
               path: {{ printf "%s/actuator/health/readiness" (default "" .Values.ingress.subPath) | quote }}
@@ -161,6 +164,7 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 2
             failureThreshold: 120
+          {{- end }}
       volumes:
         - name: core-data
           persistentVolumeClaim:

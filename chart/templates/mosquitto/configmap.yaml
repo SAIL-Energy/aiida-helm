@@ -46,7 +46,6 @@ data:
     auth_opt_pg_sslrootcert /etc/database-tls/ca.crt
     {{- end }}
     auth_opt_pg_userquery SELECT password FROM public.data_source_mqtt_user WHERE username = $1 LIMIT 1
-    auth_opt_pg_superquery SELECT 0
     auth_opt_pg_aclquery SELECT topic FROM public.data_source_mqtt_acl WHERE username = $1 AND acl_type = 'ALLOW' AND (action = 'ALL' OR ($2 = 2 AND action = 'PUBLISH') OR ($2 IN (1,4) AND action = 'SUBSCRIBE'))
   start.sh: |
     {{- include "aiida.mosquitto.start" . | nindent 4 }}
